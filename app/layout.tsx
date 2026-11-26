@@ -47,6 +47,12 @@ export default function RootLayout({
       <body
         className={`${body.variable} ${board.variable} ${geistMono.variable} antialiased`}
       >
+        <a
+          href="#main"
+          className="sr-only rounded-sm bg-signal font-bold text-roast focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:inline-flex focus:min-h-11 focus:items-center focus:px-4 focus:py-3"
+        >
+          Skip to content
+        </a>
         <ThemeProvider>
           <NextAuthProvider>
             <SiteChrome>{children}</SiteChrome>

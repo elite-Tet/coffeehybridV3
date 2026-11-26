@@ -219,14 +219,14 @@ export default function ProductManagement() {
                                     <CardContent className="p-5 space-y-4">
                                         <div className="space-y-1">
                                             <div className="flex justify-between items-start gap-2">
-                                                <h3 className="font-black text-lg tracking-tight truncate">{product.name}</h3>
+                                                <h2 className="font-black text-lg tracking-tight truncate">{product.name}</h2>
                                                 <span className="font-black text-primary italic text-lg">${product.basePrice.toFixed(2)}</span>
                                             </div>
                                             <p className="text-xs text-muted-foreground font-medium line-clamp-1">{product.description}</p>
                                         </div>
 
                                         <div className="flex items-center justify-between pt-2 border-t border-border/10">
-                                            <Badge variant="outline" className="text-[10px] font-black uppercase border-border/40 text-muted-foreground/60">
+                                            <Badge variant="outline" className="text-[10px] font-black uppercase border-border/40 text-muted-foreground">
                                                 {typeof product.category === 'object' ? (product.category as ICategory).name : 'Internal ID'}
                                             </Badge>
                                             <div className="flex gap-1">
@@ -262,7 +262,7 @@ export default function ProductManagement() {
                             {/* General Info */}
                             <div className="space-y-6">
                                 <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Identity Component</Label>
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Identity Component</Label>
                                     <Input
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -272,7 +272,7 @@ export default function ProductManagement() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Visual URI</Label>
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Visual URI</Label>
                                     <Input
                                         value={formData.image}
                                         onChange={(e) => setFormData({ ...formData, image: e.target.value })}
@@ -283,7 +283,7 @@ export default function ProductManagement() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Base Value ($)</Label>
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Base Value ($)</Label>
                                         <Input
                                             type="number"
                                             step="0.01"
@@ -294,11 +294,11 @@ export default function ProductManagement() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Classifier</Label>
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Classifier</Label>
                                         <select
                                             value={formData.category}
                                             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                            className="w-full h-12 bg-background/40 border-border/40 rounded-md px-3 font-bold text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                                            className="w-full h-12 bg-background/40 border-border/40 rounded-md px-3 font-bold text-sm focus: focus:ring-1 focus:ring-primary"
                                         >
                                             {categories.map(c => (
                                                 <option key={c._id.toString()} value={c._id.toString()}>{c.name}</option>
@@ -307,11 +307,11 @@ export default function ProductManagement() {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Technical Narrative</Label>
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Technical Narrative</Label>
                                     <textarea
                                         value={formData.description}
                                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                        className="w-full h-24 bg-background/40 border-border/40 rounded-md p-3 font-medium text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                                        className="w-full h-24 bg-background/40 border-border/40 rounded-md p-3 font-medium text-sm focus: focus:ring-1 focus:ring-primary"
                                         placeholder="Product description and tasting notes..."
                                     />
                                 </div>
@@ -319,7 +319,7 @@ export default function ProductManagement() {
 
                             {/* Configuration (Customization) */}
                             <div className="space-y-6">
-                                <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60 pt-1">Sensory Configuration</h4>
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground pt-1">Sensory Configuration</h4>
 
                                 <div className="p-4 rounded-3xl bg-muted/20 border border-border/10 space-y-4">
                                     <div className="flex items-center justify-between">

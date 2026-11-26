@@ -23,7 +23,7 @@ export default function AuthField({ id, label, hint, error, className, ...input 
                 aria-invalid={error ? true : undefined}
                 aria-describedby={[hintId, errorId].filter(Boolean).join(' ') || undefined}
                 className={cn(
-                    'h-12 w-full rounded-sm border border-input bg-roast px-3 text-base text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus-visible:border-signal focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60',
+                    'h-12 w-full rounded-sm border border-input bg-roast px-3 text-base text-foreground transition-colors placeholder:text-muted-foreground/70 focus-visible:border-signal disabled:opacity-60',
                     error && 'border-destructive',
                     className
                 )}

@@ -155,7 +155,7 @@ export default function QRScanner() {
                                 </div>
                                 <div className="space-y-2">
                                     <h2 className="text-4xl font-black tracking-tighter text-st-ready uppercase">Verified</h2>
-                                    <p className="font-mono text-xs opacity-60">ORDER {scanResult.data ? orderCode(scanResult.data._id.toString()) : ''}</p>
+                                    <p className="font-mono text-xs text-muted-foreground">ORDER {scanResult.data ? orderCode(scanResult.data._id.toString()) : ''}</p>
                                 </div>
                                 <div className="w-full p-6 rounded-3xl bg-st-ready/5 border border-st-ready/10 flex items-center justify-between font-bold">
                                     <span>Customer Ready</span>
@@ -171,7 +171,7 @@ export default function QRScanner() {
                                     <h2 className="text-4xl font-black tracking-tighter text-destructive uppercase">Error</h2>
                                     <p className="font-bold text-lg opacity-80">{scanResult.error}</p>
                                     {scanResult.data?._id && (
-                                        <p className="font-mono text-xs opacity-60">ORDER {orderCode(scanResult.data._id.toString())}</p>
+                                        <p className="font-mono text-xs text-muted-foreground">ORDER {orderCode(scanResult.data._id.toString())}</p>
                                     )}
                                 </div>
                                 <div className="w-full p-4 rounded-3xl bg-destructive/5 text-destructive font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
@@ -243,7 +243,7 @@ export default function QRScanner() {
                             spellCheck={false}
                             aria-describedby="manual-code-hint"
                             placeholder="49CC"
-                            className="display h-12 w-full min-w-0 rounded-sm border border-input bg-roast px-3 text-[1.75rem] tracking-[0.2em] text-foreground outline-none placeholder:text-muted-foreground/50 focus-visible:border-signal focus-visible:ring-2 focus-visible:ring-ring"
+                            className="display h-12 w-full min-w-0 rounded-sm border border-input bg-roast px-3 text-[1.75rem] tracking-[0.2em] text-foreground placeholder:text-muted-foreground/50 focus-visible:border-signal"
                         />
                         <button
                             type="submit"

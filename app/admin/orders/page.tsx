@@ -136,7 +136,7 @@ export default function OrderHistory() {
                                                 {style.label}
                                             </div>
                                             <div className="space-y-1">
-                                                <p className="text-[10px] font-black uppercase text-muted-foreground opacity-60">Sequence Unit</p>
+                                                <p className="text-[10px] font-black uppercase text-muted-foreground">Sequence Unit</p>
                                                 <p className="font-mono text-xs font-bold tracking-widest uppercase">#{order._id.toString().slice(-12).toUpperCase()}</p>
                                             </div>
                                         </div>

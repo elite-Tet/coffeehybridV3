@@ -67,11 +67,12 @@ function DialogContent({
         {...props}
       >
         {children}
+        {/* Local edit: larger close target (44px touch / 32px mouse). */}
         {showCloseButton && (
           <DialogPrimitive.Close data-slot="dialog-close" asChild>
             <Button
               variant="ghost"
-              className="absolute top-2 right-2"
+              className="absolute top-2 right-2 size-11 pointer-fine:size-8"
               size="icon-sm"
             >
               <XIcon

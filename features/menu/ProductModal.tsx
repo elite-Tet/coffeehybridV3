@@ -15,6 +15,8 @@ interface ProductModalProps {
     product: IProduct | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    /** Element to refocus when the sheet closes (it is opened from code, not a DialogTrigger). */
+    returnFocusTo?: React.RefObject<HTMLElement | null>;
 }
 
 function ChoiceGroup({
@@ -58,7 +60,7 @@ function ChoiceGroup({
 }
 
 /** Customize sheet: slides up from the bottom on phones, centred dialog on larger screens. */
-export default function ProductModal({ product, open, onOpenChange }: ProductModalProps) {
+export default function ProductModal({ product, open, onOpenChange, returnFocusTo }: ProductModalProps) {
     const addItem = useCartStore((state) => state.addItem);
     const updateQuantity = useCartStore((state) => state.updateQuantity);
 
@@ -93,6 +95,12 @@ export default function ProductModal({ product, open, onOpenChange }: ProductMod
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
+                onCloseAutoFocus={(e) => {
+                    if (returnFocusTo?.current?.isConnected) {
+                        e.preventDefault();
+                        returnFocusTo.current.focus();
+                    }
+                }}
                 className="flex max-h-[92dvh] flex-col gap-0 overflow-hidden rounded-xl border-0 bg-panel p-0 sm:max-w-lg max-sm:top-auto max-sm:bottom-0 max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-b-none max-sm:rounded-t-2xl data-open:max-sm:slide-in-from-bottom-10 data-open:max-sm:zoom-in-100"
             >
                 <div className="overflow-y-auto overscroll-contain">

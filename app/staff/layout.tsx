@@ -15,7 +15,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
         <div className="flex min-h-screen bg-background text-foreground">
             {/* Sidebar for navigation between Queue and Scan */}
             <Sidebar />
-            <main className="flex-1 p-8 pt-20 lg:pt-8 overflow-y-auto">
+            <main id="main" tabIndex={-1} className="outline-none flex-1 p-8 pt-20 lg:pt-8 overflow-y-auto">
                 {children}
             </main>
         </div>

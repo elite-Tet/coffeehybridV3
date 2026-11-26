@@ -54,7 +54,7 @@ function NavContent({ pathname, onLinkClick }: { pathname: string; onLinkClick?:
 
             <div className="pt-8 border-t border-border/40 px-2 space-y-4">
                 <div className="p-4 rounded-3xl bg-primary/5 border border-primary/10">
-                    <p className="text-[10px] font-black uppercase text-primary tracking-widest mb-1.5 opacity-60">Admin Access</p>
+                    <p className="text-[10px] font-black uppercase text-primary tracking-widest mb-1.5">Admin Access</p>
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-primary" />
                         <span className="text-xs font-bold text-foreground/80">Superuser Locked</span>
@@ -83,7 +83,7 @@ export default function Sidebar() {
                 <NavContent pathname={pathname} />
             </aside>
 
-            <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-md border-b border-border/20 z-50 px-4 flex items-center justify-between">
+            <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-md border-b border-border/20 z-50 px-4 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-primary font-black tracking-tighter italic">
                     <Coffee className="w-5 h-5" />
                     ADMINOS
@@ -91,7 +91,7 @@ export default function Sidebar() {
                 <Button variant="ghost" size="icon" onClick={() => setIsOpen(true)} aria-label="Open menu" aria-expanded={isOpen}>
                     <Menu className="w-6 h-6" aria-hidden="true" />
                 </Button>
-            </div>
+            </header>
 
             <AnimatePresence>
                 {isOpen && (

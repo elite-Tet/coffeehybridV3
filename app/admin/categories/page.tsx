@@ -165,8 +165,8 @@ export default function CategoryManagement() {
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-3">
-                                            <h3 className="text-xl font-black tracking-tight">{category.name}</h3>
-                                            <span className="bg-muted px-2 py-0.5 rounded-full text-[10px] font-black uppercase text-muted-foreground opacity-60">Order: {category.sortOrder}</span>
+                                            <h2 className="text-xl font-black tracking-tight">{category.name}</h2>
+                                            <span className="bg-muted px-2 py-0.5 rounded-full text-[10px] font-black uppercase text-muted-foreground">Order: {category.sortOrder}</span>
                                         </div>
                                         <p className="text-sm text-muted-foreground font-medium">{category.description || 'No description provided.'}</p>
                                     </div>
@@ -200,7 +200,7 @@ export default function CategoryManagement() {
 
                     <form onSubmit={handleSubmit} className="space-y-6 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="name" className="text-[10px] font-black uppercase tracking-widest opacity-60">Category Identity</Label>
+                            <Label htmlFor="name" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Category Identity</Label>
                             <Input
                                 id="name"
                                 value={formData.name}
@@ -211,7 +211,7 @@ export default function CategoryManagement() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="description" className="text-[10px] font-black uppercase tracking-widest opacity-60">Context Description</Label>
+                            <Label htmlFor="description" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Context Description</Label>
                             <Input
                                 id="description"
                                 value={formData.description}
@@ -222,7 +222,7 @@ export default function CategoryManagement() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="sortOrder" className="text-[10px] font-black uppercase tracking-widest opacity-60">Sequence Rank</Label>
+                                <Label htmlFor="sortOrder" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Sequence Rank</Label>
                                 <Input
                                     id="sortOrder"
                                     type="number"
@@ -232,7 +232,7 @@ export default function CategoryManagement() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="isActive" className="text-[10px] font-black uppercase tracking-widest opacity-60">System State</Label>
+                                <Label htmlFor="isActive" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">System State</Label>
                                 <div className="flex items-center h-12 gap-2">
                                     <input
                                         type="checkbox"

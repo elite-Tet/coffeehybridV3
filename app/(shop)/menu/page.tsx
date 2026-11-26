@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { Search } from 'lucide-react';
 import { toast } from 'sonner';
@@ -28,6 +28,8 @@ export default function MenuPage() {
     const [searchQuery, setSearchQuery] = useState('');
 
     const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
+    // The sheet opens from code, so remember what opened it and hand focus back on close.
+    const openerRef = useRef<HTMLElement | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
@@ -69,6 +71,7 @@ export default function MenuPage() {
     filteredProducts.sort((a, b) => Number(b.isAvailable) - Number(a.isAvailable));
 
     const openProduct = (p: IProduct) => {
+        openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         setSelectedProduct(p);
         setIsModalOpen(true);
     };
@@ -106,7 +109,7 @@ export default function MenuPage() {
                         enterKeyHint="search"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-11 w-full rounded-sm border border-input bg-panel pl-10 pr-4 text-base outline-none placeholder:text-muted-foreground focus-visible:border-signal focus-visible:ring-2 focus-visible:ring-ring"
+                        className="h-11 w-full rounded-sm border border-input bg-panel pl-10 pr-4 text-base placeholder:text-muted-foreground focus-visible:border-signal"
                     />
                 </div>
                 <CategoryTabs categories={categories.filter((c) => c.isActive)} activeCategory={activeCategory} onSelect={setActiveCategory} />
@@ -171,6 +174,7 @@ export default function MenuPage() {
                 product={selectedProduct}
                 open={isModalOpen}
                 onOpenChange={setIsModalOpen}
+                returnFocusTo={openerRef}
             />
         </div>
     );
