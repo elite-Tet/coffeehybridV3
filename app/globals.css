@@ -4,12 +4,19 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Direction C — "The Board"
+ * Dark roast background, foam text, one signal colour that means "Ready".
+ * Single theme: the app is dark-only (ThemeProvider forces `.dark` so shadcn's
+ * `dark:` variants match these values).
+ */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-body);
   --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-fraunces);
+  --font-display: var(--font-board);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -40,8 +47,16 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
 
-  /* Brand */
-  --color-roast: var(--roast);
+  /* Direction C palette (use these names in new code) */
+  --color-roast: var(--roast);        /* page */
+  --color-panel: var(--panel);        /* board, cards */
+  --color-slat: var(--slat);          /* split-flap slats, rules */
+  --color-foam: var(--foam);          /* primary text */
+  --color-dust: var(--dust);          /* secondary text */
+  --color-signal: var(--signal);      /* "Ready" — the only loud colour */
+  --color-brewing: var(--brewing);    /* in-progress lamp */
+
+  /* Legacy names from the earlier redesign, remapped so untouched pages stay coherent */
   --color-kraft: var(--kraft);
   --color-kraft-foreground: var(--kraft-foreground);
   --color-crema: var(--crema);
@@ -53,115 +68,87 @@
   --color-st-done: var(--st-done);
   --color-st-expired: var(--st-expired);
 
-  --radius-sm: calc(var(--radius) * 0.5);
-  --radius-md: calc(var(--radius) * 0.75);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.25);
-  --radius-2xl: calc(var(--radius) * 1.5);
-  --radius-3xl: calc(var(--radius) * 2);
-  --radius-4xl: calc(var(--radius) * 2.5);
+  /* Type scale: board display sizes (body uses Tailwind's default rem scale) */
+  --text-hero: clamp(3.5rem, 11vw, 9.5rem);
+  --text-hero--line-height: 0.9;
+  --text-section: clamp(2.5rem, 6vw, 4.5rem);
+  --text-section--line-height: 0.95;
+  --text-board: clamp(1.25rem, 3.2vw, 1.75rem);
+  --text-board--line-height: 1;
+
+  /* Radius: squared-off slats, softer panels */
+  --radius-sm: calc(var(--radius) * 0.5);   /* 4px  buttons, slats */
+  --radius-md: calc(var(--radius) * 0.75);  /* 6px  inputs */
+  --radius-lg: var(--radius);               /* 8px  */
+  --radius-xl: calc(var(--radius) * 1.5);   /* 12px board, panels */
+  --radius-2xl: calc(var(--radius) * 2);    /* 16px sheets */
+  --radius-3xl: calc(var(--radius) * 2.5);
+  --radius-4xl: calc(var(--radius) * 3);
+
+  --ease-flip: cubic-bezier(0.3, 1.4, 0.5, 1);
 }
 
-/* ── Light: milk, kraft, espresso ─────────────────────────── */
 :root {
-  color-scheme: light;
-  --background: #faf6ef;          /* milk */
-  --foreground: #24160f;          /* espresso */
-  --card: #fffdf9;
-  --card-foreground: #24160f;
-  --popover: #fffdf9;
-  --popover-foreground: #24160f;
-  --primary: #24160f;             /* espresso buttons */
-  --primary-foreground: #faf6ef;
-  --secondary: #f1e8da;
-  --secondary-foreground: #24160f;
-  --muted: #f1e8da;
-  --muted-foreground: #6b5544;
-  --accent: #f1e8da;
-  --accent-foreground: #24160f;
-  --destructive: #b5453a;         /* coffee cherry */
-  --border: #e4d7c4;
-  --input: #cdbba3;
-  --ring: #7a4a2a;
-  --radius: 0.75rem;
+  color-scheme: dark;
 
-  --roast: #7a4a2a;
-  --kraft: #eadcc6;
-  --kraft-foreground: #3b2618;
-  --crema: #d69a3a;
+  /* Palette */
+  --roast: #1c130e;
+  --panel: #2a1d16;
+  --slat: #3a2a20;
+  --foam: #f4eadd;      /* 15.4:1 on roast */
+  --dust: #bfae9c;      /* 8.5:1 on roast */
+  --signal: #ffb224;    /* 10.1:1 on roast */
+  --brewing: #e07a3f;   /* 6.1:1 on roast, 4.6:1 on slat */
 
-  --st-received: #8a7a6b;
-  --st-brewing: #d69a3a;
-  --st-ready: #3f7d5a;
-  --st-done: #7a4a2a;
-  --st-expired: #b5453a;
+  /* shadcn semantic tokens */
+  --background: var(--roast);
+  --foreground: var(--foam);
+  --card: var(--panel);
+  --card-foreground: var(--foam);
+  --popover: var(--panel);
+  --popover-foreground: var(--foam);
+  --primary: var(--signal);
+  --primary-foreground: var(--roast);
+  --secondary: var(--slat);
+  --secondary-foreground: var(--foam);
+  --muted: var(--slat);
+  --muted-foreground: var(--dust);
+  --accent: var(--slat);
+  --accent-foreground: var(--foam);
+  --destructive: #f07a68;
+  --border: var(--slat);
+  --input: #5a4434;
+  --ring: var(--signal);
+  --radius: 0.5rem;
 
-  --chart-1: #7a4a2a;
-  --chart-2: #d69a3a;
-  --chart-3: #3f7d5a;
-  --chart-4: #b5453a;
-  --chart-5: #8a7a6b;
+  /* Legacy brand names */
+  --kraft: var(--slat);
+  --kraft-foreground: var(--foam);
+  --crema: var(--signal);
 
-  --sidebar: #f5eee3;
-  --sidebar-foreground: #24160f;
-  --sidebar-primary: #24160f;
-  --sidebar-primary-foreground: #faf6ef;
-  --sidebar-accent: #eadcc6;
-  --sidebar-accent-foreground: #24160f;
-  --sidebar-border: #e4d7c4;
-  --sidebar-ring: #7a4a2a;
+  --st-received: var(--dust);
+  --st-brewing: var(--brewing);
+  --st-ready: var(--signal);
+  --st-done: #a8978a;
+  --st-expired: #f07a68;
+
+  --chart-1: var(--signal);
+  --chart-2: var(--brewing);
+  --chart-3: #8fc79b;
+  --chart-4: #f07a68;
+  --chart-5: var(--dust);
+
+  --sidebar: #17100b;
+  --sidebar-foreground: var(--foam);
+  --sidebar-primary: var(--signal);
+  --sidebar-primary-foreground: var(--roast);
+  --sidebar-accent: var(--panel);
+  --sidebar-accent-foreground: var(--foam);
+  --sidebar-border: var(--slat);
+  --sidebar-ring: var(--signal);
 
   --target-size: 24px;
   --bottom-bar-h: 0px;
-}
-
-/* ── Dark: a night shift behind the bar ───────────────────── */
-.dark {
-  color-scheme: dark;
-  --background: #17100b;
-  --foreground: #f2e8da;
-  --card: #21170f;
-  --card-foreground: #f2e8da;
-  --popover: #21170f;
-  --popover-foreground: #f2e8da;
-  --primary: #eadcc6;             /* kraft buttons on espresso */
-  --primary-foreground: #24160f;
-  --secondary: #2c2016;
-  --secondary-foreground: #f2e8da;
-  --muted: #2c2016;
-  --muted-foreground: #bfae98;
-  --accent: #2c2016;
-  --accent-foreground: #f2e8da;
-  --destructive: #e0705f;
-  --border: #3a2a1f;
-  --input: #574332;
-  --ring: #d9a86a;
-
-  --roast: #d9a86a;
-  --kraft: #3a2a1f;
-  --kraft-foreground: #f2e8da;
-  --crema: #e2ac52;
-
-  --st-received: #a8998a;
-  --st-brewing: #e2ac52;
-  --st-ready: #6cb48a;
-  --st-done: #d9a86a;
-  --st-expired: #e0705f;
-
-  --chart-1: #d9a86a;
-  --chart-2: #e2ac52;
-  --chart-3: #6cb48a;
-  --chart-4: #e0705f;
-  --chart-5: #a8998a;
-
-  --sidebar: #1d140e;
-  --sidebar-foreground: #f2e8da;
-  --sidebar-primary: #eadcc6;
-  --sidebar-primary-foreground: #24160f;
-  --sidebar-accent: #2c2016;
-  --sidebar-accent-foreground: #f2e8da;
-  --sidebar-border: #3a2a1f;
-  --sidebar-ring: #d9a86a;
 }
 
 @media (pointer: coarse) {
@@ -176,11 +163,13 @@
     @apply border-border outline-ring/50;
   }
   html {
-    accent-color: var(--roast);
+    accent-color: var(--signal);
     scroll-padding-bottom: calc(var(--bottom-bar-h) + 1rem);
   }
   body {
     @apply bg-background text-foreground font-sans;
+    font-size: 1.0625rem;
+    line-height: 1.6;
     overflow-wrap: break-word;
   }
   h1, h2, h3 {
@@ -192,38 +181,64 @@
   img, video {
     max-inline-size: 100%;
   }
-  :where(button, [role="button"], input:not([type="checkbox"], [type="radio"]), select, textarea) {
+  /* Minimum tap height for controls. Checkbox/radio controls are excluded (Radix renders them as
+     <button>s): their wrapping <label> rows provide the target, and stretching them distorts the box. */
+  :where(button:not([role="checkbox"], [role="radio"]), [role="button"], input:not([type="checkbox"], [type="radio"]), select, textarea) {
     min-block-size: var(--target-size);
   }
   :focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
+    outline: 3px solid var(--ring);
+    outline-offset: 3px;
   }
 }
 
 @layer components {
-  /* Kraft-paper cup sleeve used for the pickup ticket: the one loud element. */
+  /* Board display face: condensed, heavy, tight. Used for headings, codes and the board. */
+  .display {
+    font-family: var(--font-board), Impact, sans-serif;
+    font-variation-settings: "opsz" 72;
+    font-weight: 800;
+    letter-spacing: 0.005em;
+    line-height: 0.95;
+  }
+
+  /* Pickup ticket: a board panel with punched notches. */
   .ticket {
-    background-color: var(--kraft);
-    color: var(--kraft-foreground);
+    background-color: var(--panel);
+    color: var(--foam);
     background-image:
       radial-gradient(circle at 0 50%, var(--background) 0.7rem, transparent 0.75rem),
       radial-gradient(circle at 100% 50%, var(--background) 0.7rem, transparent 0.75rem);
     background-repeat: no-repeat;
   }
   .ticket-number {
-    font-family: var(--font-fraunces), Georgia, serif;
-    font-variation-settings: "SOFT" 100, "WONK" 1;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    line-height: 0.9;
-    font-variant-numeric: lining-nums;
+    font-family: var(--font-board), Impact, sans-serif;
+    font-variation-settings: "opsz" 72;
+    font-weight: 900;
+    letter-spacing: 0.01em;
+    line-height: 0.85;
+    font-variant-numeric: lining-nums tabular-nums;
   }
-  .display {
-    font-family: var(--font-fraunces), Georgia, serif;
-    font-variation-settings: "SOFT" 50;
-    letter-spacing: -0.015em;
+
+  /* Board flip: replayed when a cell remounts with new text. Off under reduced motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    .flip-in {
+      transform-origin: 50% 0;
+      animation: board-flip 0.5s var(--ease-flip);
+    }
   }
+
+  /* Progress line that fills as its section scrolls into view (progressive enhancement). */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .scroll-fill {
+        animation: scroll-fill linear both;
+        animation-timeline: view();
+        animation-range: entry 20% cover 55%;
+      }
+    }
+  }
+
   /* App-like bottom chrome on phones */
   .safe-bottom {
     padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
@@ -236,4 +251,14 @@
 [data-slot="dialog-close"] {
   background-color: var(--background);
   border-radius: 9999px;
+}
+
+@keyframes board-flip {
+  from { transform: rotateX(90deg); opacity: 0.2; }
+  to { transform: rotateX(0); opacity: 1; }
+}
+
+@keyframes scroll-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }

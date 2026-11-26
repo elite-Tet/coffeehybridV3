@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
-import { auth } from '@/lib/auth';
+import { auth } from '@/server/auth';
 import { ExtendedUser } from '@/types';
-import Sidebar from '@/components/admin/Sidebar';
+import Sidebar from '@/features/admin/Sidebar';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
     const session = await auth();

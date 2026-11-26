@@ -1,26 +1,23 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/mongodb';
-import Category from '@/models/Category';
-import { mockCategories } from '@/lib/mock-data';
+import dbConnect from '@/server/db';
+import Category from '@/server/models/Category';
+import { requireRole } from '@/server/require-role';
 
 export const GET = async () => {
     try {
         await dbConnect();
         const categories = await Category.find({ isActive: true }).sort({ sortOrder: 1 });
-        
-        // Use Mock data if DB is empty
-        if (categories.length === 0) {
-            return NextResponse.json({ success: true, data: mockCategories });
-        }
-
         return NextResponse.json({ success: true, data: categories });
-    } catch (error: unknown) {
-        console.warn('MongoDB not available or failed, using mock data for testing. Error:', error);
-        return NextResponse.json({ success: true, data: mockCategories });
+    } catch (error) {
+        console.error('GET /api/categories failed:', error);
+        return NextResponse.json({ success: false, error: 'Categories are unavailable right now' }, { status: 503 });
     }
 };
 
 export const POST = async (req: Request) => {
+    const check = await requireRole(['admin']);
+    if (!check.ok) return check.response;
+
     try {
         await dbConnect();
         const body = await req.json();

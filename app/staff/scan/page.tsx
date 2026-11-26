@@ -1,4 +1,4 @@
-import QRScanner from '@/components/staff/QRScanner';
+import QRScanner from '@/features/staff/QRScanner';
 
 export default function ScanPage() {
     return (

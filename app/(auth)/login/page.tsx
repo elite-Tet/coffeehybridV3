@@ -4,47 +4,41 @@ import { Suspense, useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { Coffee, LogIn, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import AuthShell from '@/features/auth/AuthShell';
+import AuthField from '@/features/auth/AuthField';
+import { safeCallbackUrl } from '@/features/auth/safe-callback';
+import { boardButtonGhost, boardButtonPrimary } from '@/components/layout/board-styles';
 
 function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const error = searchParams.get('error');
-    const callbackUrl = searchParams.get('callbackUrl') || '/';
-    const [email, setEmail] = useState('');
+    const callbackUrl = safeCallbackUrl(searchParams.get('callbackUrl'));
+    // Auth.js sends people back here with ?error=… when Google sign-in fails.
+    const providerError = searchParams.get('error');
+    const [email, setEmail] = useState(searchParams.get('email') ?? '');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-
-    const isSuspended = error === 'ACCOUNT_SUSPENDED' || error === 'OAuthCallbackError';
+    const [formError, setFormError] = useState(
+        providerError ? 'Google sign-in didn’t work. Try again, or use your email and password.' : ''
+    );
 
     const handleCredentialsLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        setFormError('');
         setLoading(true);
-
         try {
-            const res = await signIn('credentials', {
-                redirect: false,
-                email,
-                password,
-                callbackUrl,
-            });
-
+            const res = await signIn('credentials', { redirect: false, email, password, callbackUrl });
             if (res?.error) {
-                toast.error('Invalid email or password');
+                setFormError('That email and password don’t match. Check them and try again.');
             } else {
-                toast.success('Signed in successfully');
+                toast.success('Signed in');
                 router.push(callbackUrl);
                 router.refresh();
             }
         } catch {
-            toast.error('Something went wrong during sign in');
+            setFormError('We couldn’t reach the shop. Check your connection and try again.');
         } finally {
             setLoading(false);
         }
@@ -54,162 +48,68 @@ function LoginForm() {
         setLoading(true);
         try {
             await signIn('google', { callbackUrl });
-        } catch (error) {
-            console.error("Login failed", error);
+        } catch {
+            setFormError('Google sign-in didn’t work. Try again, or use your email and password.');
             setLoading(false);
         }
     };
 
+    const registerHref = callbackUrl === '/' ? '/register' : `/register?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="w-full max-w-md"
-            >
-                <Card className="border-border/40 bg-card/60 backdrop-blur-md">
-                    <CardHeader className="text-center">
-                        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                            <Coffee className="h-6 w-6" />
-                        </div>
-                        <CardTitle className="text-2xl font-bold tracking-tight">Welcome Back</CardTitle>
-                        <CardDescription>
-                            Sign in to continue your coffee journey.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {isSuspended && (
-                            <div className="rounded-lg bg-destructive/15 p-3 text-sm text-destructive border border-destructive/20 text-center">
-                                Your account is currently suspended. Please try again later or contact support.
-                            </div>
-                        )}
+        <AuthShell
+            title="Sign in"
+            lede="Pick up where you left off: your cart and orders are waiting."
+            footer={<>New here? <Link href={registerHref} className="font-bold text-signal underline underline-offset-4">Create an account</Link></>}
+        >
+            <form onSubmit={handleCredentialsLogin} className="grid gap-4">
+                {formError && (
+                    <p role="alert" className="rounded-sm border-2 border-destructive/60 bg-destructive/10 p-3 font-bold text-destructive">
+                        {formError}
+                    </p>
+                )}
+                <AuthField
+                    id="email"
+                    label="Email"
+                    type="email"
+                    autoComplete="email"
+                    inputMode="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
+                    suppressHydrationWarning
+                />
+                <AuthField
+                    id="password"
+                    label="Password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
+                    suppressHydrationWarning
+                />
+                <button type="submit" className={`${boardButtonPrimary} mt-2 w-full disabled:opacity-60`} disabled={loading}>
+                    {loading ? (<><Loader2 className="size-5 animate-spin" aria-hidden="true" /> Signing in…</>) : 'Sign in'}
+                </button>
+            </form>
 
-                        <form onSubmit={handleCredentialsLogin} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="john@example.com"
-                                    required
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    disabled={loading}
-                                    suppressHydrationWarning
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="password">Password</Label>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    required
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    disabled={loading}
-                                    suppressHydrationWarning
-                                />
-                            </div>
-                            <Button type="submit" className="w-full" disabled={loading}>
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Signing in...
-                                    </>
-                                ) : (
-                                    'Sign In'
-                                )}
-                            </Button>
-                        </form>
+            <div className="my-5 flex items-center gap-3 text-sm text-muted-foreground" aria-hidden="true">
+                <span className="h-0.5 flex-1 bg-slat" />or<span className="h-0.5 flex-1 bg-slat" />
+            </div>
 
-                        <div className="relative my-4">
-                            <div className="absolute inset-0 flex items-center">
-                                <span className="w-full border-t" />
-                            </div>
-                            <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-                            </div>
-                        </div>
-
-                        <Button
-                            variant="outline"
-                            className="w-full h-11 transition-all hover:bg-primary/5 border-border/60"
-                            onClick={handleGoogleLogin}
-                            disabled={loading}
-                        >
-                            <LogIn className="mr-2 h-4 w-4" />
-                            Google
-                        </Button>
-
-                        {/* Development Helper */}
-                        {process.env.NODE_ENV === 'development' && (
-                            <div className="mt-4 space-y-3 p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground border border-border/40">
-                                <div>
-                                    <p className="font-semibold mb-1">Dev Mode: Mock Admin</p>
-                                    <div className="flex justify-between items-center bg-background p-2 rounded border border-border/20 mb-1">
-                                        <code>admin@coffee.com</code>
-                                        <span className="text-muted-foreground/50">|</span>
-                                        <code>admin123</code>
-                                    </div>
-                                    <Button 
-                                        variant="link" 
-                                        className="h-auto p-0 text-xs w-full justify-end text-primary"
-                                        onClick={() => {
-                                            setEmail('admin@coffee.com');
-                                            setPassword('admin123');
-                                        }}
-                                    >
-                                        Auto-fill Admin
-                                    </Button>
-                                </div>
-                                <Separator />
-                                <div>
-                                    <p className="font-semibold mb-1">Dev Mode: Mock Customer</p>
-                                    <div className="flex justify-between items-center bg-background p-2 rounded border border-border/20 mb-1">
-                                        <code>customer@coffee.com</code>
-                                        <span className="text-muted-foreground/50">|</span>
-                                        <code>customer123</code>
-                                    </div>
-                                    <Button 
-                                        variant="link" 
-                                        className="h-auto p-0 text-xs w-full justify-end text-primary"
-                                        onClick={() => {
-                                            setEmail('customer@coffee.com');
-                                            setPassword('customer123');
-                                        }}
-                                    >
-                                        Auto-fill Customer
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-                    </CardContent>
-                    <CardFooter className="flex flex-col items-center space-y-2 text-center text-sm text-muted-foreground">
-                        <p>
-                            Don&apos;t have an account?{' '}
-                            <Link href="/register" className="text-primary hover:underline font-medium">
-                                Sign up
-                            </Link>
-                        </p>
-                    </CardFooter>
-                </Card>
-            </motion.div>
-        </div>
-    );
-}
-
-function LoadingFallback() {
-    return (
-        <div className="flex min-h-screen items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+            <button type="button" onClick={handleGoogleLogin} disabled={loading} className={`${boardButtonGhost} w-full disabled:opacity-60`}>
+                Continue with Google
+            </button>
+        </AuthShell>
     );
 }
 
 export default function LoginPage() {
     return (
-        <Suspense fallback={<LoadingFallback />}>
+        <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center" role="status"><Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" /><span className="sr-only">Loading</span></div>}>
             <LoginForm />
         </Suspense>
     );

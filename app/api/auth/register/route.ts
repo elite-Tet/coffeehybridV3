@@ -1,15 +1,16 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import dbConnect from '@/lib/mongodb';
-import User from '@/models/User';
+import dbConnect from '@/server/db';
+import User from '@/server/models/User';
+import { registerSchema } from '@/lib/validations/user.schema';
 
 export async function POST(req: Request) {
     try {
-        const { name, email, password } = await req.json();
-
-        if (!name || !email || !password) {
-            return NextResponse.json({ message: 'Missing fields' }, { status: 400 });
+        const parsed = registerSchema.safeParse(await req.json().catch(() => null));
+        if (!parsed.success) {
+            return NextResponse.json({ message: parsed.error.issues[0]?.message ?? 'Invalid details' }, { status: 400 });
         }
+        const { name, email, password } = parsed.data;
 
         await dbConnect();
 
@@ -19,12 +20,9 @@ export async function POST(req: Request) {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        
-        // Admin Logic:
-        // Only if email contains 'admin', make them admin (e.g. admin@coffee.com).
-        // Otherwise, default to customer.
-        const isAdminEmail = email.toLowerCase().includes('admin');
-        const role = isAdminEmail ? 'admin' : 'customer';
+        // Every self-registered account is a customer. Staff/admin roles are granted
+        // directly in the database by an existing admin, never from the sign-up form.
+        const role = 'customer';
 
         const user = await User.create({
             name,

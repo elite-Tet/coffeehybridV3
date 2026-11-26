@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import User from '@/models/User';
+import User from '@/server/models/User';
 
 type ValidationError = {
     errors: Record<string, unknown>;

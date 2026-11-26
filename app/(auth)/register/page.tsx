@@ -1,163 +1,123 @@
 'use client';
 
 import { Suspense, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { Coffee, Loader2, UserPlus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import AuthShell from '@/features/auth/AuthShell';
+import AuthField from '@/features/auth/AuthField';
+import { safeCallbackUrl } from '@/features/auth/safe-callback';
+import { boardButtonPrimary } from '@/components/layout/board-styles';
+import { registerSchema } from '@/lib/validations/user.schema';
+
+type Field = 'name' | 'email' | 'password' | 'confirmPassword';
 
 function RegisterForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackUrl = safeCallbackUrl(searchParams.get('callbackUrl'));
     const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        password: '',
-        confirmPassword: ''
-    });
+    const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+    const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
+    const [formError, setFormError] = useState('');
+
+    const set = (field: Field) => (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({ ...formData, [field]: e.target.value });
+        if (errors[field]) setErrors({ ...errors, [field]: undefined });
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
-        if (formData.password !== formData.confirmPassword) {
-            toast.error("Passwords do not match");
+        setFormError('');
+
+        // Same schema the API uses, so the rules (e.g. 8+ character password) live in one place.
+        const parsed = registerSchema.safeParse(formData);
+        const next: Partial<Record<Field, string>> = {};
+        if (!parsed.success) {
+            for (const issue of parsed.error.issues) {
+                const key = issue.path[0] as Field;
+                if (!next[key]) next[key] = issue.message;
+            }
+        }
+        if (formData.password && formData.password !== formData.confirmPassword) {
+            next.confirmPassword = 'The two passwords don’t match.';
+        }
+        setErrors(next);
+        if (Object.keys(next).length > 0) {
+            const first = (['name', 'email', 'password', 'confirmPassword'] as Field[]).find((f) => next[f]);
+            if (first) document.getElementById(first)?.focus();
             return;
         }
 
         setLoading(true);
-
         try {
             const res = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: formData.name,
-                    email: formData.email,
-                    password: formData.password
-                }),
+                body: JSON.stringify({ name: formData.name, email: formData.email, password: formData.password }),
             });
-
-            const data = await res.json();
-
+            const data = await res.json().catch(() => ({}));
             if (!res.ok) {
-                // Determine if it's a DB connection error (status 503 from our backend)
-                if (res.status === 503) {
-                    toast.error("Database connection failed (IP blocked). Check console.", {
-                        description: "Use the Mock Admin login to test: admin@coffee.com / admin123"
-                    });
-                     // Optional: redirect to login immediately for convenience
-                     setTimeout(() => router.push('/login'), 2000);
-                     return;
-                }
-                throw new Error(data.message || 'Registration failed');
+                setFormError(
+                    res.status === 503
+                        ? 'We couldn’t reach the shop’s database. Try again in a minute.'
+                        : data.message === 'User already exists'
+                          ? 'There’s already an account with that email. Sign in instead.'
+                          : data.message || 'We couldn’t create your account. Try again.'
+                );
+                return;
             }
-
-            toast.success("Account created successfully! Please sign in.");
-            router.push('/login');
-        } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Registration failed');
+            toast.success('Account created. Sign in to start ordering.');
+            const params = new URLSearchParams({ email: formData.email.trim() });
+            if (callbackUrl !== '/') params.set('callbackUrl', callbackUrl);
+            router.push(`/login?${params}`);
+        } catch {
+            setFormError('We couldn’t reach the shop. Check your connection and try again.');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="w-full max-w-md"
-            >
-                <Card className="border-border/40 bg-card/60 backdrop-blur-md">
-                    <CardHeader className="text-center">
-                        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                            <Coffee className="h-6 w-6" />
-                        </div>
-                        <CardTitle className="text-2xl font-bold tracking-tight">Create Account</CardTitle>
-                        <CardDescription>
-                            Join CoffeeHybrid to start ordering delicious coffee.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <Label htmlFor="name">Full Name</Label>
-                            <Input
-                                id="name"
-                                placeholder="John Doe"
-                                required
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            />
-                            
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                placeholder="john@example.com"
-                                required
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            />
-                            
-                            <Label htmlFor="password">Password</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                required
-                                value={formData.password}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            />
-                            
-                            <Label htmlFor="confirmPassword">Confirm Password</Label>
-                            <Input
-                                id="confirmPassword"
-                                type="password"
-                                required
-                                value={formData.confirmPassword}
-                                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                            />
-                            <Button 
-                                type="submit" 
-                                className="w-full" 
-                                disabled={loading}
-                            >
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Creating account...
-                                    </>
-                                ) : (
-                                    <>
-                                        <UserPlus className="mr-2 h-4 w-4" />
-                                        Sign Up
-                                    </>
-                                )}
-                            </Button>
-                        </form>
-                    </CardContent>
-                    <CardFooter className="flex justify-center border-t p-4">
-                        <p className="text-sm text-muted-foreground">
-                            Already have an account?{' '}
-                            <Link href="/login" className="text-primary hover:underline font-medium">
-                                Sign in
-                            </Link>
-                        </p>
-                    </CardFooter>
-                </Card>
-            </motion.div>
-        </div>
+        <AuthShell
+            title="Create an account"
+            lede="Order ahead, get a pickup code, skip the line."
+            footer={<>Already have an account? <Link href="/login" className="font-bold text-signal underline underline-offset-4">Sign in</Link></>}
+        >
+            <form onSubmit={handleSubmit} className="grid gap-4" noValidate>
+                {formError && (
+                    <p role="alert" className="rounded-sm border-2 border-destructive/60 bg-destructive/10 p-3 font-bold text-destructive">
+                        {formError}
+                    </p>
+                )}
+                <AuthField id="name" label="Name" autoComplete="name" required value={formData.name} onChange={set('name')} error={errors.name} disabled={loading} />
+                <AuthField id="email" label="Email" type="email" autoComplete="email" inputMode="email" required value={formData.email} onChange={set('email')} error={errors.email} disabled={loading} />
+                <AuthField
+                    id="password"
+                    label="Password"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    minLength={8}
+                    hint="At least 8 characters."
+                    value={formData.password}
+                    onChange={set('password')}
+                    error={errors.password}
+                    disabled={loading}
+                />
+                <AuthField id="confirmPassword" label="Confirm password" type="password" autoComplete="new-password" required value={formData.confirmPassword} onChange={set('confirmPassword')} error={errors.confirmPassword} disabled={loading} />
+                <button type="submit" className={`${boardButtonPrimary} mt-2 w-full disabled:opacity-60`} disabled={loading}>
+                    {loading ? (<><Loader2 className="size-5 animate-spin" aria-hidden="true" /> Creating account…</>) : 'Create account'}
+                </button>
+            </form>
+        </AuthShell>
     );
 }
 
 export default function RegisterPage() {
     return (
-        <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>}>
+        <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center" role="status"><Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" /><span className="sr-only">Loading</span></div>}>
             <RegisterForm />
         </Suspense>
     );

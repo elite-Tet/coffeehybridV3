@@ -1,25 +1,27 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Geist, Geist_Mono } from "next/font/google";
+import { Atkinson_Hyperlegible_Next, Big_Shoulders, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import NextAuthProvider from "@/components/providers/NextAuthProvider";
-import ThemeProvider from "@/components/providers/ThemeProvider";
-import SiteChrome from "@/components/shared/SiteChrome";
+import NextAuthProvider from "@/components/layout/providers/NextAuthProvider";
+import ThemeProvider from "@/components/layout/providers/ThemeProvider";
+import SiteChrome from "@/components/layout/SiteChrome";
 import { Toaster } from "@/components/ui/sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Body: built for legibility (Braille Institute), fits the a11y-first brief.
+const body = Atkinson_Hyperlegible_Next({
+  variable: "--font-body",
   subsets: ["latin"],
+});
+
+// Display: condensed board face; opsz axis lets .display pin it to its display cut.
+const board = Big_Shoulders({
+  variable: "--font-board",
+  subsets: ["latin"],
+  axes: ["opsz"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-});
-
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  axes: ["SOFT", "WONK", "opsz"],
 });
 
 export const metadata: Metadata = {
@@ -31,11 +33,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  colorScheme: "light dark",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#faf6ef" },
-    { media: "(prefers-color-scheme: dark)", color: "#17100b" },
-  ],
+  colorScheme: "dark",
+  themeColor: "#1c130e",
 };
 
 export default function RootLayout({
@@ -44,9 +43,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} antialiased`}
+        className={`${body.variable} ${board.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
           <NextAuthProvider>
