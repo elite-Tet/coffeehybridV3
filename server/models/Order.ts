@@ -38,7 +38,7 @@ const OrderSchema = new Schema<IOrder>(
 OrderSchema.index({ status: 1 });
 OrderSchema.index({ user: 1 });
 OrderSchema.index({ expiresAt: 1 });
-OrderSchema.index({ qrCode: 1 }, { unique: true });
+// qrCode is already uniquely indexed via `unique: true` on the field.
 
 const Order = models.Order || model<IOrder>('Order', OrderSchema);
 export default Order;

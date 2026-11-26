@@ -1,13 +1,18 @@
-// Script to fix product images and seed new data
-// Usage: tsx scripts/update-products.ts (or copy logic to an API route)
+// Admin-only: upserts the sample menu (categories + products) from lib/mock-data.ts.
+// Usage (signed in as admin): fetch('/api/admin/seed', { method: 'POST' })
 
 import { NextResponse } from 'next/server';
 import dbConnect from '@/server/db';
 import Product from '@/server/models/Product';
 import Category from '@/server/models/Category';
 import { mockProducts } from '@/lib/mock-data';
+import { requireRole } from '@/server/require-role';
 
-export const GET = async () => {
+// POST, not GET: it writes to the database, so it must not be triggerable by a link or prefetch.
+export const POST = async () => {
+    const check = await requireRole(['admin']);
+    if (!check.ok) return check.response;
+
     try {
         await dbConnect();
         

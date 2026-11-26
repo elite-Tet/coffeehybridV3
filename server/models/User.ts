@@ -18,8 +18,7 @@ const UserSchema = new Schema<IUser>(
     { timestamps: true }
 );
 
-// Optimize: Unique index on email
-UserSchema.index({ email: 1 });
+// email already has a unique index via `unique: true` on the field.
 
 const User = models.User || model<IUser>('User', UserSchema);
 export default User;

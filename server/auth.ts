@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 import dbConnect from "./db";
 import User from "@/server/models/User"; 
 import { Role } from "@/types";
@@ -27,7 +28,8 @@ declare module "next-auth" {
 }
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
-    debug: true, // Enable debugging to troubleshoot sign-in issues
+    // Verbose Auth.js logs only when explicitly requested (they include user details)
+    debug: process.env.AUTH_DEBUG === 'true',
     trustHost: true,
     providers: [
         Google({
@@ -52,34 +54,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                     const password = credentials?.password;
                     if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
                         return null;
-                    }
-
-                    // Development Fallback: If using admin mock credentials
-                    if (process.env.NODE_ENV === 'development' && 
-                        email === 'admin@coffee.com' && 
-                        password === 'admin123') {
-                        return {
-                            id: 'mock-admin-id',
-                            name: 'Mock Admin',
-                            email: 'admin@coffee.com',
-                            role: 'admin',
-                            strikes: 0,
-                            suspendedUntil: null
-                        };
-                    }
-
-                    // Development Fallback: If using customer mock credentials
-                    if (process.env.NODE_ENV === 'development' && 
-                        email === 'customer@coffee.com' && 
-                        password === 'customer123') {
-                        return {
-                            id: 'mock-customer-id',
-                            name: 'Mock Customer',
-                            email: 'customer@coffee.com',
-                            role: 'customer',
-                            strikes: 0,
-                            suspendedUntil: null
-                        };
                     }
 
                     await dbConnect();
@@ -120,11 +94,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         })
     ],
     callbacks: {
-        async signIn({ user, account }) {
-            // Log sign-in attempt for debugging
-            console.log("Sign-in attempt:", { user, account });
-            return true;
-        },
         async session({ session, token }) {
             if (session.user) {
                 session.user.id = token.sub || (token.id as string) || '1';
@@ -134,7 +103,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             }
             return session;
         },
-        async jwt({ token, user, trigger, session }) {
+        async jwt({ token, user, trigger }) {
             if (user) {
                 token.id = user.id;
                 token.role = user.role || 'customer';
@@ -142,10 +111,16 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 token.suspendedUntil = user.suspendedUntil || null;
             }
             
-            // Allow updating session data
-            if (trigger === "update" && session?.user) {
-                token.role = session.user.role;
-                token.strikes = session.user.strikes;
+            // session.update() can be called from the browser, so never trust its payload:
+            // re-read role and strike state from the database instead.
+            if (trigger === "update" && typeof token.id === "string" && mongoose.isValidObjectId(token.id)) {
+                await dbConnect();
+                const fresh = await User.findById(token.id).select("role strikes suspendedUntil").lean();
+                if (fresh) {
+                    token.role = fresh.role;
+                    token.strikes = fresh.strikes || 0;
+                    token.suspendedUntil = fresh.suspendedUntil || null;
+                }
             }
             
             return token;

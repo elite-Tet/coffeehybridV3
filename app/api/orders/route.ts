@@ -4,10 +4,11 @@ import dbConnect from '@/server/db';
 import Order from '@/server/models/Order';
 import User from '@/server/models/User';
 import Product from '@/server/models/Product';
-import { IOrderItem, IProduct } from '@/types';
+import { IProduct } from '@/types';
 import { generateQRCode, calculateExpirationTime } from '@/lib/qr';
 import { isSuspended } from '@/lib/strikes';
 import mongoose from 'mongoose';
+import { createOrderSchema } from '@/lib/validations/order.schema';
 
 export const POST = async (req: Request) => {
     try {
@@ -28,12 +29,11 @@ export const POST = async (req: Request) => {
             }, { status: 403 });
         }
 
-        const body = await req.json();
-        const { items } = body as { items: IOrderItem[] };
-
-        if (!items || items.length === 0) {
-            return NextResponse.json({ success: false, error: 'Cart is empty' }, { status: 400 });
+        const parsed = createOrderSchema.safeParse(await req.json().catch(() => null));
+        if (!parsed.success) {
+            return NextResponse.json({ success: false, error: parsed.error.issues[0]?.message ?? 'Invalid order' }, { status: 400 });
         }
+        const { items } = parsed.data;
 
         // Phase 5: Step 1 - Calculate total server-side
         let calculatedTotal = 0;
