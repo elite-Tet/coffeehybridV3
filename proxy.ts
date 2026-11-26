@@ -2,8 +2,8 @@ import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { Role } from "@/types";
 
-// Force Node.js runtime (needed for NextAuth crypto operations)
-export const runtime = "nodejs";
+// Next 16 "proxy" always runs on the Node.js runtime (needed for NextAuth crypto),
+// so no runtime segment config is declared here.
 
 interface ExtendedUser {
     id: string;

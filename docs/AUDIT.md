@@ -28,7 +28,7 @@ Screenshots are in `docs/before/{committed,wip}/{desktop,mobile}/<route>.png`. T
 
 ## 2. File / folder tree
 
-Excluding `node_modules`, `.next`, `.git`, `.claude`, `.playwright-cli` and `public/` (stock Next SVGs plus `public/images`). `✎` means modified in WIP and `+` means new in WIP.
+Excluding `node_modules`, `.next`, `.git`, local tooling folders and `public/` (stock Next SVGs plus `public/images`). `✎` means modified in WIP and `+` means new in WIP.
 
 ```
 .
@@ -220,4 +220,4 @@ Test coverage is two model tests only. There are no API, component or e2e tests.
 ## Audit side effects (for transparency)
 
 - **Atlas writes:** 2 test users (`audit-customer-*`, `audit-admin-*` @example.test) and 2 test orders (one per state) were written to the Atlas DB in `.env.local`. These orders will expire via the cron job. Credentials are in the session scratchpad, not the repo.
-- **New repo files:** `.claude/launch.json` (local preview config), plus `docs/` and `.next/` build output.
+- **New repo files:** `docs/` and `.next/` build output.

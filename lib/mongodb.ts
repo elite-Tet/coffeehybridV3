@@ -48,7 +48,7 @@ async function dbConnect() {
         }).catch(err => {
             console.error("MongoDB Connection Failed (Check IP Whitelist):", err.message);
             throw err;
-        }) as any;
+        });
     }
 
     try {

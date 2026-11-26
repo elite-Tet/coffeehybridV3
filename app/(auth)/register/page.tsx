@@ -59,8 +59,8 @@ function RegisterForm() {
 
             toast.success("Account created successfully! Please sign in.");
             router.push('/login');
-        } catch (error: any) {
-            toast.error(error.message);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Registration failed');
         } finally {
             setLoading(false);
         }
