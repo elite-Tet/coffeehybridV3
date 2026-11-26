@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Homepage Directions</title>
+<style>
+:root { --bg: #F2F2F0; --fg: #1F1F1F; --muted: #5E5E5A; --line: #D6D6D2; --card: #FFFFFF; --accent: #1F1F1F; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #161616; --fg: #EDEDEA; --muted: #A8A8A2; --line: #333; --card: #1F1F1F; --accent: #EDEDEA; } }
+:root[data-theme="dark"] { --bg: #161616; --fg: #EDEDEA; --muted: #A8A8A2; --line: #333; --card: #1F1F1F; --accent: #EDEDEA; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, -apple-system, sans-serif; }
+header { padding: 20px 16px 8px; max-width: 1800px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; justify-content: space-between; }
+h1 { font-size: 1.25rem; margin: 0; }
+header p { margin: 4px 0 0; color: var(--muted); max-width: 60ch; }
+.toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--card); }
+.toggle button { border: 0; background: transparent; color: var(--fg); font: inherit; padding: 8px 16px; min-height: 40px; border-radius: 999px; cursor: pointer; }
+.toggle button[aria-pressed="true"] { background: var(--accent); color: var(--bg); }
+main { display: grid; gap: 16px; padding: 16px; max-width: 1800px; margin: 0 auto; grid-template-columns: 1fr; }
+@media (min-width: 1100px) { main { grid-template-columns: repeat(3, 1fr); } }
+article { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+.frame { position: relative; overflow: hidden; background: var(--bg); height: 70vh; min-height: 480px; border-bottom: 1px solid var(--line); }
+.frame iframe { border: 0; position: absolute; top: 0; left: 50%; transform-origin: top center; background: #fff; }
+.meta { padding: 14px 16px 16px; display: grid; gap: 6px; }
+.meta h2 { margin: 0; font-size: 1rem; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.meta h2 a { font-size: .875rem; font-weight: 500; color: var(--muted); }
+.meta p { margin: 0; color: var(--muted); }
+.meta dt { font-weight: 600; color: var(--fg); margin-top: 4px; }
+.meta dd { margin: 0; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>CoffeeHybrid: three homepage directions</h1>
+    <p>All three use the same content and section order, so you compare design rather than copy. Each frame scrolls on its own.</p>
+  </div>
+  <div class="toggle" role="group" aria-label="Preview width">
+    <button type="button" data-w="1440" aria-pressed="true">Desktop 1440</button>
+    <button type="button" data-w="390" aria-pressed="false">Mobile 390</button>
+  </div>
+</header>
+<main>
+  <article>
+    <div class="frame"><iframe src="a-editorial.html" title="Direction A, editorial minimal" loading="lazy"></iframe></div>
+    <div class="meta">
+      <h2>A · Editorial minimal <a href="a-editorial.html" target="_blank" rel="noopener">Open full page</a></h2>
+      <dl>
+        <dt>Rationale</dt><dd>Treat the homepage like a well-set café menu: big serif type, a dot-leader price list, one photo, lots of air.</dd>
+        <dt>Signals to a hiring manager</dt><dd>Typographic discipline and hierarchy. Can make a page work through content and spacing instead of decoration.</dd>
+      </dl>
+    </div>
+  </article>
+  <article>
+    <div class="frame"><iframe src="b-earthy.html" title="Direction B, warm earthy" loading="lazy"></iframe></div>
+    <div class="meta">
+      <h2>B · Warm earthy <a href="b-earthy.html" target="_blank" rel="noopener">Open full page</a></h2>
+      <dl>
+        <dt>Rationale</dt><dd>Lead with the product’s real artifact, the pickup ticket, in an oat, espresso and leaf-green palette that evolves the work-in-progress redesign.</dd>
+        <dt>Signals to a hiring manager</dt><dd>Product thinking and iteration. Shows a design grown out of the app’s core flow, with a clear before and after.</dd>
+      </dl>
+    </div>
+  </article>
+  <article>
+    <div class="frame"><iframe src="c-motion.html" title="Direction C, bold motion" loading="lazy"></iframe></div>
+    <div class="meta">
+      <h2>C · Bold motion <a href="c-motion.html" target="_blank" rel="noopener">Open full page</a></h2>
+      <dl>
+        <dt>Rationale</dt><dd>Make the order status itself the hero: a split-flap pickup board where codes flip to Ready, plus one scroll-linked progress line.</dd>
+        <dt>Signals to a hiring manager</dt><dd>Interaction craft with modern CSS (scroll-driven animation), with accessibility built in: a pause control and reduced-motion support.</dd>
+      </dl>
+    </div>
+  </article>
+</main>
+<script>
+const frames = [...document.querySelectorAll('.frame')];
+let width = 1440;
+function fit() {
+  frames.forEach(f => {
+    const ifr = f.querySelector('iframe');
+    const scale = Math.min(1, f.clientWidth / width);
+    ifr.style.width = width + 'px';
+    ifr.style.height = (f.clientHeight / scale) + 'px';
+    ifr.style.transform = `translateX(-50%) scale(${scale})`;
+  });
+}
+document.querySelectorAll('.toggle button').forEach(b => b.addEventListener('click', () => {
+  width = +b.dataset.w;
+  document.querySelectorAll('.toggle button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  fit();
+}));
+addEventListener('resize', fit);
+fit();
+</script>
+</body>
+</html>

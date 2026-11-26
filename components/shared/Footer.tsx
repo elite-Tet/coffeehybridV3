@@ -1,120 +1,26 @@
-/**
- * Footer Component
- * Site-wide footer with branding, links, and info
- */
-
 import Link from 'next/link';
-import { Coffee } from 'lucide-react';
-import { ROUTES, LEGAL_LINKS } from '@/lib/routes';
+import Logo from '@/components/shared/Logo';
+import { LEGAL_LINKS, ROUTES } from '@/lib/routes';
 
 export default function Footer() {
-  const currentYear = new Date().getFullYear();
+    return (
+        <footer className="mt-24 border-t">
+            <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-[2fr_1fr] md:px-6">
+                <div className="space-y-3">
+                    <Logo />
+                    <p className="max-w-xs text-sm text-muted-foreground">
+                        Order on your phone, show your code at the counter, and take your coffee. No line.
+                    </p>
+                </div>
 
-  return (
-    <footer className="border-t border-border/40 bg-card/40 backdrop-blur-sm mt-24">
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-          {/* Brand */}
-          <div className="space-y-3">
-            <Link href={ROUTES.HOME} className="flex items-center gap-2 font-black text-lg">
-              <Coffee className="w-5 h-5 text-primary" />
-              <span>CoffeeHybrid</span>
-            </Link>
-            <p className="text-xs text-muted-foreground">
-              Smart coffee ordering system designed for modern cafes.
-            </p>
-          </div>
-
-          {/* Customer */}
-          <div>
-            <h4 className="font-bold text-sm mb-3 uppercase tracking-tight">Customer</h4>
-            <nav className="space-y-2">
-              <Link
-                href={ROUTES.MENU}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Menu
-              </Link>
-              <Link
-                href={ROUTES.CHECKOUT}
-                className="block text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Checkout
-              </Link>
-              <Link
-                href={ROUTES.LOGIN}
-                className="block text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Login
-              </Link>
-            </nav>
-          </div>
-
-          {/* Staff */}
-          <div>
-            <h4 className="font-bold text-sm mb-3 uppercase tracking-tight">Operations</h4>
-            <nav className="space-y-2">
-              <Link
-                href={ROUTES.STAFF}
-                className="block text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Staff Portal
-              </Link>
-              <Link
-                href={ROUTES.STAFF_SCAN}
-                className="block text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                QR Scanner
-              </Link>
-              <Link
-                href={ROUTES.ADMIN}
-                className="block text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Admin
-              </Link>
-            </nav>
-          </div>
-
-          {/* Legal */}
-          <div>
-            <h4 className="font-bold text-sm mb-3 uppercase tracking-tight">Legal</h4>
-            <nav className="space-y-2">
-              <a
-                href={LEGAL_LINKS.PRIVACY}
-                className="block text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Privacy
-              </a>
-              <a
-                href={LEGAL_LINKS.TERMS}
-                className="block text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Terms
-              </a>
-              <a
-                href={LEGAL_LINKS.CONTACT}
-                className="block text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Contact
-              </a>
-            </nav>
-          </div>
-        </div>
-
-        {/* Divider */}
-        <div className="border-t border-border/20 pt-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-xs text-muted-foreground">
-              © {currentYear} CoffeeHybrid. All rights reserved.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Built with ❤️ using{' '}
-              <span className="text-primary font-semibold">Next.js</span> &{' '}
-              <span className="text-primary font-semibold">MongoDB</span>
-            </p>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
+                <nav aria-label="Footer" className="flex flex-col gap-2 text-sm">
+                    <Link href={ROUTES.MENU} className="text-muted-foreground hover:text-foreground">Menu</Link>
+                    <Link href="/#how-it-works" className="text-muted-foreground hover:text-foreground">How pickup works</Link>
+                    <a href={LEGAL_LINKS.PRIVACY} className="text-muted-foreground hover:text-foreground">Privacy</a>
+                    <a href={LEGAL_LINKS.TERMS} className="text-muted-foreground hover:text-foreground">Terms</a>
+                </nav>
+            </div>
+            <p className="mx-auto max-w-6xl px-4 pb-8 text-xs text-muted-foreground md:px-6">© {new Date().getFullYear()} CoffeeHybrid</p>
+        </footer>
+    );
 }

@@ -4,23 +4,30 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
-import { Loader2, Calendar, DollarSign, Package, ArrowRight, Clock, Info } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { IOrder } from '@/types';
+import { format, isToday, isYesterday } from 'date-fns';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useCartStore } from '@/store/cart.store';
+import { IOrder, IProduct } from '@/types';
+import StatusChip from '@/components/order/StatusChip';
+import { ACTIVE_STATUSES, orderCode } from '@/lib/order-status';
 
-// Extend IOrder slightly for display or map correctly
-interface HistoryOrder extends IOrder {
-    itemsCount: number;
+function dayLabel(d: Date) {
+    if (isToday(d)) return 'Today';
+    if (isYesterday(d)) return 'Yesterday';
+    return format(d, 'EEEE, MMM d');
+}
+
+function itemSummary(order: IOrder) {
+    return order.items
+        .map((i) => `${i.quantity > 1 ? `${i.quantity} × ` : ''}${(i.product as IProduct)?.name ?? 'Drink'}`)
+        .join(', ');
 }
 
 export default function OrderHistoryPage() {
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     const router = useRouter();
-    const [orders, setOrders] = useState<HistoryOrder[]>([]);
+    const [orders, setOrders] = useState<IOrder[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -29,150 +36,122 @@ export default function OrderHistoryPage() {
             router.push('/login?callbackUrl=/history');
             return;
         }
-
-        if (status === 'authenticated') {
-            fetchOrders();
-        }
-    }, [status, router]);
-
-    const fetchOrders = async () => {
-        try {
-            const res = await fetch('/api/orders');
-            const data = await res.json();
-             console.log(data); // Debugging
-
-            if (data.success) {
-                // Assuming data.data is an array of orders
-                // We might need to adjust based on the exact API response shape from GET /api/orders
-                setOrders(data.data.map((order: any) => ({
-                    ...order,
-                    itemsCount: order.items.reduce((acc: number, item: any) => acc + item.quantity, 0)
-                })));
-            } else {
-                setError(data.error || 'Failed to load orders');
+        if (status !== 'authenticated') return;
+        (async () => {
+            try {
+                const res = await fetch('/api/orders');
+                const data = await res.json();
+                if (data.success) setOrders(data.data);
+                else setError(data.error || 'Your orders didn’t load.');
+            } catch {
+                setError('Your orders didn’t load. Check your connection and try again.');
+            } finally {
+                setLoading(false);
             }
-        } catch (err) {
-            setError('An error occurred while fetching orders');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const getStatusVariant = (status: string) => {
-        switch (status) { // 'pending' | 'confirmed' | 'ready' | 'completed' | 'cancelled' | 'expired'
-            case 'completed': return 'default'; // dark/primary
-            case 'ready': return 'secondary'; // green-ish in custom CSS maybe, or secondary
-            case 'confirmed': return 'outline';
-            case 'pending': return 'secondary';
-            case 'cancelled': return 'destructive';
-            case 'expired': return 'destructive';
-            default: return 'outline';
-        }
-    };
+        })();
+    }, [status, router]);
 
     if (status === 'loading' || loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-muted-foreground animate-pulse">Loading your history...</p>
+            <div className="flex h-[60vh] items-center justify-center" role="status">
+                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                <span className="sr-only">Loading your orders</span>
             </div>
         );
     }
 
-    if (error) {
-        return (
-            <div className="container max-w-4xl py-10 px-4 text-center">
-                <div className="p-6 rounded-lg border border-destructive/20 bg-destructive/5 text-destructive">
-                    <Info className="h-10 w-10 mx-auto mb-4" />
-                    <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
-                    <p>{error}</p>
-                    <Button variant="outline" onClick={() => window.location.reload()} className="mt-4">
-                        Try Again
-                    </Button>
-                </div>
-            </div>
-        );
-    }
+    const reorder = (o: IOrder) => {
+        const { addItem, updateQuantity } = useCartStore.getState();
+        let skipped = 0;
+        for (const item of o.items) {
+            const product = item.product as IProduct;
+            if (!product || typeof product !== 'object' || !product.isAvailable) {
+                skipped++;
+                continue;
+            }
+            addItem(product, item.customizations, item.unitPrice);
+            if (item.quantity > 1) updateQuantity(useCartStore.getState().items.length - 1, item.quantity);
+        }
+        if (skipped === o.items.length) {
+            toast.error('Those drinks are sold out right now.');
+            return;
+        }
+        if (skipped > 0) toast('Some drinks are sold out, so we left them out.');
+        router.push('/checkout');
+    };
+
+    const active = orders.filter((o) => ACTIVE_STATUSES.includes(o.status));
+    const past = orders.filter((o) => !ACTIVE_STATUSES.includes(o.status));
+    const groups = past.reduce<Record<string, IOrder[]>>((acc, o) => {
+        const key = dayLabel(new Date(o.createdAt));
+        (acc[key] ||= []).push(o);
+        return acc;
+    }, {});
 
     return (
-        <div className="min-h-screen bg-secondary/10 pb-20">
-            <div className="bg-background border-b border-border/50 py-12">
-                <div className="container max-w-5xl px-4">
-                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">Order History</h1>
-                    <p className="text-muted-foreground">View and track all your past coffee orders.</p>
-                </div>
-            </div>
+        <div className="mx-auto max-w-3xl px-4 pt-6 md:px-6 md:pt-10">
+            <h1 className="display text-4xl font-semibold">Your orders</h1>
 
-            <div className="container max-w-5xl px-4 py-8">
-                {orders.length === 0 ? (
-                    <div className="text-center py-20 px-4 rounded-3xl border border-border/50 bg-card/50 backdrop-blur-sm">
-                        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 text-primary">
-                            <Package className="h-10 w-10" />
-                        </div>
-                        <h2 className="text-2xl font-bold mb-2">No past orders</h2>
-                        <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                            Looks like you haven&apos;t ordered anything yet. Time to get some coffee!
-                        </p>
-                        <Button size="lg" asChild className="rounded-full px-8">
-                            <Link href="/menu">Browse Menu</Link>
-                        </Button>
-                    </div>
-                ) : (
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-                        {orders.map((order) => (
-                            <Card key={order._id} className="group overflow-hidden border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300">
-                                <CardHeader className="bg-secondary/20 pb-4">
-                                    <div className="flex justify-between items-start">
-                                        <div className="space-y-1">
-                                            <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
-                                                Order #{order._id.toString().slice(-6)}
-                                            </p>
-                                            <CardTitle className="flex items-center gap-2 text-lg">
-                                                {format(new Date(order.createdAt), 'MMM d, yyyy')}
-                                                <span className="text-muted-foreground text-sm font-normal">
-                                                    at {format(new Date(order.createdAt), 'h:mm a')}
-                                                </span>
-                                            </CardTitle>
-                                        </div>
-                                        <Badge variant={getStatusVariant(order.status) as any} className="capitalize px-3 py-1">
-                                            {order.status}
-                                        </Badge>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="pt-6">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2.5 bg-primary/10 rounded-lg text-primary">
-                                                <Package className="h-5 w-5" />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-muted-foreground font-medium">Items</p>
-                                                <p className="font-semibold text-lg">{order.itemsCount}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2.5 bg-primary/10 rounded-lg text-primary">
-                                                <DollarSign className="h-5 w-5" />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-muted-foreground font-medium">Total</p>
-                                                <p className="font-semibold text-lg">${order.total?.toFixed(2)}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                                <CardFooter className="pt-2 bg-secondary/5 border-t border-border/30">
-                                    <Button asChild className="w-full group-hover:bg-primary group-hover:text-white transition-colors" variant="ghost">
-                                        <Link href={`/order/${order._id}`}>
-                                            View Details <ArrowRight className="ml-2 h-4 w-4" />
-                                        </Link>
-                                    </Button>
-                                </CardFooter>
-                            </Card>
+            {error && (
+                <div className="mt-8 rounded-2xl border bg-card p-6">
+                    <p className="font-medium">{error}</p>
+                    <button type="button" onClick={() => location.reload()} className="mt-3 text-sm font-medium text-roast underline underline-offset-4">
+                        Try again
+                    </button>
+                </div>
+            )}
+
+            {!error && orders.length === 0 && (
+                <div className="mt-12 rounded-3xl border border-dashed p-10 text-center">
+                    <h2 className="display text-2xl font-semibold">No orders yet</h2>
+                    <p className="mt-2 text-muted-foreground">Your first coffee is a few taps away.</p>
+                    <Link href="/menu" className="mt-6 inline-flex h-12 items-center rounded-full bg-primary px-6 font-medium text-primary-foreground">
+                        Browse the menu
+                    </Link>
+                </div>
+            )}
+
+            {active.length > 0 && (
+                <section aria-labelledby="active-title" className="mt-8">
+                    <h2 id="active-title" className="text-lg font-medium">In progress</h2>
+                    <ul className="mt-3 space-y-3">
+                        {active.map((o) => (
+                            <li key={o._id}>
+                                <Link href={`/order/${o._id}`} className="ticket flex items-center gap-4 rounded-2xl px-6 py-4">
+                                    <span className="ticket-number text-4xl">#{orderCode(o._id)}</span>
+                                    <span className="min-w-0 flex-1">
+                                        <span className="block truncate">{itemSummary(o)}</span>
+                                        <span className="text-sm opacity-75">Show code</span>
+                                    </span>
+                                    <StatusChip status={o.status} className="bg-background/60" />
+                                </Link>
+                            </li>
                         ))}
-                    </div>
-                )}
-            </div>
+                    </ul>
+                </section>
+            )}
+
+            {Object.entries(groups).map(([day, list]) => (
+                <section key={day} aria-labelledby={`day-${day}`} className="mt-10">
+                    <h2 id={`day-${day}`} className="text-sm font-medium text-muted-foreground">{day}</h2>
+                    <ul className="mt-2 divide-y rounded-2xl border bg-card">
+                        {list.map((o) => (
+                            <li key={o._id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4">
+                                <Link href={`/order/${o._id}`} className="min-w-0 flex-1 basis-48">
+                                    <span className="block truncate font-medium">{itemSummary(o)}</span>
+                                    <span className="text-sm text-muted-foreground">
+                                        {format(new Date(o.createdAt), 'h:mm a')}, ${o.total.toFixed(2)}
+                                    </span>
+                                </Link>
+                                <StatusChip status={o.status} />
+                                <button type="button" onClick={() => reorder(o)} className="rounded-full border px-4 py-2 text-sm hover:bg-muted">
+                                    Order again
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            ))}
         </div>
     );
 }

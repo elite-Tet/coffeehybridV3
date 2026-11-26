@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CoffeeHybrid · Direction B</title>
+<meta name="description" content="Direction B: warm and earthy, built around the pickup ticket.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Tokens ──────────────────────────────────────────────────────────── */
+:root {
+  --color-oat: #EEE6D8;          /* page */
+  --color-milk: #FBF7F0;         /* raised surfaces, the ticket */
+  --color-espresso: #2A1C15;     /* text + primary */
+  --color-roast: #6B5446;        /* secondary text, 6.1:1 on oat */
+  --color-leaf: #2F5A3A;         /* "ready" + accent, from the coffee plant */
+  --color-leaf-soft: #D9E4D2;
+  --color-crema: #C9975A;        /* decorative only, never text */
+  --color-line: #D8CCB9;
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "Geist", system-ui, sans-serif;
+
+  --text-sm: .875rem; --text-base: 1rem; --text-lg: 1.25rem; --text-xl: 1.563rem;
+  --text-2xl: clamp(2rem, 4vw, 2.75rem); --text-hero: clamp(2.75rem, 7vw, 5.25rem);
+
+  --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem; --space-6: 1.5rem;
+  --space-8: 2rem; --space-12: 3rem; --space-16: 4rem; --space-20: 5rem;
+  --radius-sm: 10px; --radius-md: 18px; --radius-lg: 28px; --radius-pill: 999px;
+  --shadow-ticket: 0 1px 0 rgba(42,28,21,.06), 0 18px 40px -18px rgba(42,28,21,.45);
+  --gutter: clamp(1rem, 4vw, 2.5rem); --max: 72rem; --measure: 32rem;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--color-oat); color: var(--color-espresso); font: 400 var(--text-base)/1.6 var(--font-sans); }
+img { display: block; max-width: 100%; height: auto; }
+a { color: inherit; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; font-optical-sizing: auto; }
+p { margin: 0; }
+:focus-visible { outline: 3px solid var(--color-leaf); outline-offset: 3px; border-radius: 6px; }
+.skip { position: absolute; left: -999px; }
+.skip:focus { left: var(--gutter); top: var(--space-2); background: var(--color-espresso); color: var(--color-milk); padding: var(--space-2) var(--space-4); z-index: 10; }
+.wrap { max-width: var(--max); margin-inline: auto; padding-inline: var(--gutter); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: 48px; padding: 0 var(--space-6); border-radius: var(--radius-pill); font: 500 var(--text-base)/1 var(--font-sans); text-decoration: none; }
+.btn-primary { background: var(--color-espresso); color: var(--color-milk); }
+.btn-primary:hover { background: #47322A; }
+.btn-ghost { color: var(--color-espresso); box-shadow: inset 0 0 0 1.5px var(--color-espresso); }
+.btn-ghost:hover { background: rgba(42,28,21,.06); }
+
+/* SiteHeader */
+.site-header .wrap { display: flex; align-items: center; justify-content: space-between; min-height: 72px; gap: var(--space-4); }
+.wordmark { display: inline-flex; align-items: center; min-height: 44px; gap: var(--space-2); font: 600 1.375rem/1 var(--font-display); text-decoration: none; }
+.wordmark svg { width: 26px; height: 26px; }
+.nav { display: none; gap: var(--space-6); }
+.nav a { text-decoration: none; color: var(--color-roast); min-height: 44px; display: inline-flex; align-items: center; }
+.nav a:hover { color: var(--color-espresso); }
+.header-cta { display: none; }
+@media (min-width: 640px) { .nav, .header-cta { display: inline-flex; } }
+
+/* Hero: the ticket is the star */
+.hero { padding-block: var(--space-12) var(--space-16); }
+.hero-grid { display: grid; gap: var(--space-12); align-items: center; }
+.hero h1 { font-size: var(--text-hero); font-weight: 800; line-height: .98; letter-spacing: -0.02em; max-width: 12ch; }
+.hero-lede { font-size: var(--text-lg); color: var(--color-roast); max-width: var(--measure); margin-top: var(--space-6); }
+.actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-8); }
+@media (min-width: 1024px) { .hero-grid { grid-template-columns: 1.1fr .9fr; } }
+
+.ticket-stage { display: grid; justify-items: center; gap: var(--space-3); }
+.ticket {
+  --notch: 14px;
+  position: relative; width: min(100%, 22rem); background: var(--color-milk); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-ticket); padding: var(--space-6); rotate: -2.5deg;
+  mask: radial-gradient(circle var(--notch) at 0 62%, #0000 98%, #000) left / 51% 100% no-repeat,
+        radial-gradient(circle var(--notch) at 100% 62%, #0000 98%, #000) right / 51% 100% no-repeat;
+}
+.ticket-top { display: flex; justify-content: space-between; align-items: start; }
+.ticket-for { font-size: var(--text-sm); color: var(--color-roast); }
+.ticket-code { font: 800 4rem/1 var(--font-display); letter-spacing: -0.03em; margin-top: var(--space-1); }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--radius-pill); background: var(--color-leaf-soft); color: var(--color-leaf); font-size: var(--text-sm); font-weight: 600; }
+.chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.ticket-rule { border: 0; border-top: 2px dashed var(--color-line); margin: var(--space-6) calc(var(--space-6) * -1) var(--space-6); }
+.ticket-body { display: grid; grid-template-columns: 7.5rem 1fr; gap: var(--space-4); align-items: center; }
+.qr { width: 7.5rem; aspect-ratio: 1; background: #fff; border-radius: var(--radius-sm); padding: 8px; }
+.qr svg { width: 100%; height: 100%; display: block; }
+.ticket-body p { font-size: var(--text-sm); color: var(--color-roast); }
+.ticket-body strong { color: var(--color-espresso); }
+.ticket-caption { font-size: var(--text-sm); color: var(--color-roast); }
+
+/* Sections */
+.section { padding-block: var(--space-16); }
+.section-head { margin-bottom: var(--space-8); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: var(--space-4); }
+.section-head h2 { font-size: var(--text-2xl); font-weight: 600; letter-spacing: -0.015em; }
+.section-head p { color: var(--color-roast); max-width: var(--measure); }
+
+/* HowItWorks: a connected timeline */
+.how { background: var(--color-milk); border-radius: var(--radius-lg); padding: var(--space-8) var(--space-6); }
+@media (min-width: 640px) { .how { padding: var(--space-12); } }
+.timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-8); counter-reset: s; }
+.timeline li { counter-increment: s; position: relative; padding-left: 3.5rem; }
+.timeline li::before { content: counter(s); position: absolute; left: 0; top: -2px; width: 2.5rem; height: 2.5rem; border-radius: 50%; display: grid; place-items: center; background: var(--color-oat); font: 600 1.125rem/1 var(--font-display); }
+.timeline li:last-child::before { background: var(--color-leaf); color: var(--color-milk); }
+.timeline h3 { font: 600 var(--text-lg)/1.3 var(--font-sans); }
+.timeline p { color: var(--color-roast); margin-top: var(--space-1); max-width: 30ch; }
+@media (min-width: 1024px) {
+  .timeline { grid-template-columns: repeat(3, 1fr); }
+  .timeline li { padding-left: 0; padding-top: 3.75rem; }
+  .timeline li::after { content: ""; position: absolute; top: 1.25rem; left: 3.25rem; right: var(--space-4); border-top: 2px dashed var(--color-line); }
+  .timeline li:last-child::after { display: none; }
+}
+
+/* MenuPreview: one feature + three */
+.menu-grid { display: grid; gap: var(--space-4); grid-template-columns: 1fr 1fr; }
+.drink { position: relative; background: var(--color-milk); border-radius: var(--radius-md); overflow: hidden; display: grid; text-decoration: none; }
+.drink img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+.drink-info { padding: var(--space-3) var(--space-4) var(--space-4); display: flex; justify-content: space-between; gap: var(--space-2); align-items: baseline; }
+.drink-name { font-weight: 600; }
+.drink-price { font-variant-numeric: tabular-nums; color: var(--color-roast); }
+.drink:hover .drink-name { text-decoration: underline; text-underline-offset: 3px; }
+.drink-feature { grid-column: 1 / -1; }
+.drink-feature img { aspect-ratio: 16/10; }
+.drink-feature .drink-name { font: 600 var(--text-xl)/1.2 var(--font-display); }
+@media (min-width: 1024px) {
+  .menu-grid { grid-template-columns: 2fr 1fr 1fr; grid-template-rows: auto auto; }
+  .drink-feature { grid-column: 1; grid-row: 1 / span 2; }
+  .drink-feature img { aspect-ratio: auto; height: 100%; min-height: 100%; }
+  .drink-feature { grid-template-rows: 1fr auto; }
+}
+
+/* PickupPolicy */
+.policy { display: grid; gap: var(--space-8); background: var(--color-espresso); color: var(--color-milk); border-radius: var(--radius-lg); padding: var(--space-8) var(--space-6); }
+@media (min-width: 640px) { .policy { padding: var(--space-12); } }
+@media (min-width: 1024px) { .policy { grid-template-columns: 1fr 1fr; align-items: center; } }
+.policy h2 { font-size: var(--text-2xl); font-weight: 600; line-height: 1.1; max-width: 16ch; }
+.policy-copy { color: #E2D6C6; display: grid; gap: var(--space-4); max-width: var(--measure); }
+.strikes { display: flex; gap: var(--space-3); align-items: center; margin-top: var(--space-2); }
+.strike { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #E2D6C6; }
+.strike.is-used { background: var(--color-crema); border-color: var(--color-crema); }
+.strikes span { font-size: var(--text-sm); color: #E2D6C6; }
+
+/* ClosingCta */
+.closing { text-align: center; padding-block: var(--space-20); }
+.closing h2 { font-size: var(--text-2xl); font-weight: 600; }
+.closing p { color: var(--color-roast); margin-top: var(--space-3); }
+.closing .actions { justify-content: center; }
+
+/* SiteFooter */
+.site-footer { border-top: 1px solid var(--color-line); padding-block: var(--space-12); color: var(--color-roast); font-size: var(--text-sm); }
+.footer-grid { display: grid; gap: var(--space-8); }
+@media (min-width: 640px) { .footer-grid { grid-template-columns: 2fr 1fr 1fr; } }
+.footer-grid ul { list-style: none; margin: 0; padding: 0; }
+.footer-grid a { text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
+.footer-grid a:hover { color: var(--color-espresso); text-decoration: underline; }
+
+/* BottomTabBar */
+.tabbar { position: fixed; inset: auto 0 0; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--color-milk); border-top: 1px solid var(--color-line); padding-bottom: env(safe-area-inset-bottom); z-index: 5; }
+.tabbar a { min-height: 60px; display: grid; place-items: center; align-content: center; gap: 2px; text-decoration: none; font-size: .75rem; color: var(--color-roast); }
+.tabbar svg { width: 22px; height: 22px; }
+.tabbar a[aria-current="page"] { color: var(--color-espresso); font-weight: 600; }
+body { padding-bottom: 68px; }
+@media (min-width: 640px) { .tabbar { display: none; } body { padding-bottom: 0; } }
+@media (prefers-reduced-motion: reduce) { .ticket { rotate: 0deg; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="wordmark" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 8h12l-1.2 11.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8L6 8Z"/><path d="M5 8h14M8 8l.6-3h6.8l.6 3"/></svg>CoffeeHybrid</a>
+    <nav class="nav" aria-label="Main">
+      <a href="#menu">Menu</a><a href="#how">How pickup works</a><a href="#">Your orders</a><a href="#">Sign in</a>
+    </nav>
+    <a class="btn btn-primary header-cta" href="#">Start an order</a>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap hero-grid">
+      <div>
+        <h1 id="hero-title">Skip the line, not the coffee.</h1>
+        <p class="hero-lede">Order ahead and get a pickup ticket on your phone. Your drink is waiting on the counter with your name on it.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="#">Start an order</a>
+          <a class="btn btn-ghost" href="#menu">See the menu</a>
+        </div>
+      </div>
+      <div class="ticket-stage">
+        <article class="ticket" aria-label="Example pickup ticket for order A27, status ready">
+          <div class="ticket-top">
+            <div><p class="ticket-for">For Dara</p><p class="ticket-code">A27</p></div>
+            <span class="chip">Ready</span>
+          </div>
+          <hr class="ticket-rule">
+          <div class="ticket-body">
+            <div class="qr" id="qr" aria-hidden="true"></div>
+            <p>Show this code at the counter. We hold it until <strong>10:42</strong>.</p>
+          </div>
+        </article>
+        <p class="ticket-caption">This is what your pickup ticket looks like.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <div class="how">
+        <div class="section-head"><h2 id="how-title">How pickup works</h2><p>About a minute on your phone.</p></div>
+        <ol class="timeline">
+          <li><h3>Choose your drink</h3><p>Pick a size, milk and sugar. Your total updates as you go.</p></li>
+          <li><h3>Get your ticket</h3><p>A short code and a QR appear on your phone. We start brewing.</p></li>
+          <li><h3>Show it, take it</h3><p>The barista scans your ticket and hands you your drink.</p></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="menu" aria-labelledby="menu-title">
+    <div class="wrap">
+      <div class="section-head"><h2 id="menu-title">Popular today</h2><a class="btn btn-ghost" href="#">See the full menu</a></div>
+      <div class="menu-grid">
+        <a class="drink drink-feature" href="#"><img src="https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=1000&h=800&fit=crop&q=80" alt="Close-up of iced coffee with milk in a glass (placeholder photo)." width="500" height="400"><span class="drink-info"><span class="drink-name">Nitro Cold Brew</span><span class="drink-price">$5.45</span></span></a>
+        <a class="drink" href="#"><img src="https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=500&h=500&fit=crop" alt="Iced blended coffee topped with cream and a cookie (placeholder photo)." width="250" height="250"><span class="drink-info"><span class="drink-name">Cappuccino</span><span class="drink-price">$4.25</span></span></a>
+        <a class="drink" href="#"><img src="https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=500&h=500&fit=crop" alt="Iced coffee with milk swirling into espresso." width="250" height="250"><span class="drink-info"><span class="drink-name">Iced Latte</span><span class="drink-price">$4.75</span></span></a>
+        <a class="drink" href="#"><img src="https://images.unsplash.com/photo-1546171753-97d7676e4602?w=500&h=500&fit=crop&q=80" alt="Sparkling lime drink over ice (placeholder photo)." width="250" height="250"><span class="drink-info"><span class="drink-name">Strawberry Açaí</span><span class="drink-price">$4.95</span></span></a>
+        <a class="drink" href="#" style="display:grid;place-items:center;min-height:8rem;background:var(--color-leaf-soft)"><span class="drink-info"><span class="drink-name" style="color:var(--color-leaf)">12 more drinks</span></span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="policy-title">
+    <div class="wrap">
+      <div class="policy">
+        <h2 id="policy-title">A fair pickup window for everyone.</h2>
+        <div class="policy-copy">
+          <p>We hold every order for <strong style="color:var(--color-milk)">30 minutes</strong>. After that it expires, so drinks don’t sit going cold.</p>
+          <p>An expired order counts as a missed pickup. Miss three and ordering pauses for 24 hours.</p>
+          <div class="strikes" role="img" aria-label="Example: 1 of 3 missed pickups used"><i class="strike is-used"></i><i class="strike"></i><i class="strike"></i><span>1 of 3 missed pickups</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="closing" aria-labelledby="closing-title">
+    <div class="wrap">
+      <h2 id="closing-title">Ready when you are.</h2>
+      <p>Your first ticket is about a minute away.</p>
+      <div class="actions"><a class="btn btn-primary" href="#">Start an order</a></div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div><p class="wordmark" style="color:var(--color-espresso)">CoffeeHybrid</p><p style="margin-top:var(--space-2);max-width:30ch">Order on your phone, show your code at the counter, take your coffee. Open daily 7:00 to 19:00.</p></div>
+    <ul aria-label="Order"><li><a href="#menu">Menu</a></li><li><a href="#">Your orders</a></li><li><a href="#">Sign in</a></li></ul>
+    <ul aria-label="About"><li><a href="#how">How pickup works</a></li><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li></ul>
+  </div>
+</footer>
+
+<nav class="tabbar" aria-label="Quick">
+  <a href="#menu" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 8h12l-1.2 11.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8L6 8Z"/><path d="M5 8h14"/></svg>Menu</a>
+  <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>Orders</a>
+  <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>Cart</a>
+  <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Account</a>
+</nav>
+
+<script>
+/* Decorative QR-like pattern (real QR is rendered by qrcode.react in the app) */
+(function () {
+  const n = 21, cells = []; let seed = 27;
+  const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  const finder = (x, y) => [[0,0],[n-7,0],[0,n-7]].some(([fx, fy]) => {
+    const dx = x - fx, dy = y - fy; if (dx < 0 || dy < 0 || dx > 6 || dy > 6) return null;
+    return dx === 0 || dy === 0 || dx === 6 || dy === 6 || (dx > 1 && dx < 5 && dy > 1 && dy < 5);
+  });
+  const inFinder = (x, y) => [[0,0],[n-7,0],[0,n-7]].some(([fx, fy]) => x >= fx - 1 && x <= fx + 7 && y >= fy - 1 && y <= fy + 7);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    if (inFinder(x, y) ? finder(x, y) : rnd() > .52) cells.push(`<rect x="${x}" y="${y}" width="1" height="1"/>`);
+  }
+  document.getElementById('qr').innerHTML = `<svg viewBox="0 0 ${n} ${n}" shape-rendering="crispEdges" fill="#2A1C15">${cells.join('')}</svg>`;
+})();
+</script>
+</body>
+</html>

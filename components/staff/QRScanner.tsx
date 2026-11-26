@@ -44,10 +44,10 @@ export default function QRScanner() {
             /* verbose= */ false
         );
 
-        const onScanSuccess = async (decodedText: string, decodedResult: any) => {
+        const onScanSuccess = async (decodedText: string) => {
             if (isVerifyingRef.current) return;
             
-            console.log(`Scan verified: ${decodedText}`, decodedResult);
+            console.log(`Scan verified: ${decodedText}`);
             isVerifyingRef.current = true;
             setIsVerifying(true);
             
@@ -86,7 +86,7 @@ export default function QRScanner() {
             }
         };
 
-        const onScanFailure = (error: any) => {
+        const onScanFailure = () => {
             // Silence errors as they happen constantly during seek
         };
 
@@ -98,7 +98,7 @@ export default function QRScanner() {
              if (scannerRef.current) {
                 try {
                     scannerRef.current.clear();
-                } catch (e) {
+                } catch {
                     // Ignore clear errors
                 }
                 scannerRef.current = null;
@@ -111,7 +111,7 @@ export default function QRScanner() {
         if (scannerRef.current) {
             try {
                 scannerRef.current.resume();
-            } catch (error) {
+            } catch {
                 // Ignore if not paused
             }
         }

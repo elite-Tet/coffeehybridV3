@@ -37,11 +37,13 @@ export async function POST(req: Request) {
             { message: 'User registered successfully', userId: user._id },
             { status: 201 }
         );
-    } catch (error: any) {
+    } catch (error) {
         console.error('Registration error:', error);
+        const name = error instanceof Error ? error.name : '';
+        const message = error instanceof Error ? error.message : '';
         
         // Check for MongoDB connection errors
-        if (error.name === 'MongooseServerSelectionError' || error.message.includes('buffering timed out')) {
+        if (name === 'MongooseServerSelectionError' || message.includes('buffering timed out')) {
             return NextResponse.json(
                 { message: 'Database Connection Failed. Your IP might not be whitelisted on MongoDB Atlas.' },
                 { status: 503 }
@@ -49,7 +51,7 @@ export async function POST(req: Request) {
         }
 
         return NextResponse.json(
-            { message: error.message || 'Internal Server Error' },
+            { message: message || 'Internal Server Error' },
             { status: 500 }
         );
     }

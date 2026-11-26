@@ -3,7 +3,6 @@ import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 // import { MongoDBAdapter } from "@auth/mongodb-adapter";
-// import clientPromise from "./mongodb-client";
 import dbConnect from "./mongodb";
 import User from "@/models/User"; 
 import { Role } from "@/types";
@@ -20,6 +19,11 @@ declare module "next-auth" {
             strikes: number;
             suspendedUntil: Date | null;
         };
+    }
+    interface User {
+        role?: Role;
+        strikes?: number;
+        suspendedUntil?: Date | null;
     }
 }
 
@@ -44,16 +48,18 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 email: { label: "Email", type: "email" },
                 password: { label: "Password", type: "password" }
             },
-            authorize: async (credentials: any) => {
+            authorize: async (credentials) => {
                 try {
-                    if (!credentials?.email || !credentials?.password) {
+                    const email = credentials?.email;
+                    const password = credentials?.password;
+                    if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
                         return null;
                     }
 
                     // Development Fallback: If using admin mock credentials
                     if (process.env.NODE_ENV === 'development' && 
-                        credentials.email === 'admin@coffee.com' && 
-                        credentials.password === 'admin123') {
+                        email === 'admin@coffee.com' && 
+                        password === 'admin123') {
                         return {
                             id: 'mock-admin-id',
                             name: 'Mock Admin',
@@ -66,8 +72,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
                     // Development Fallback: If using customer mock credentials
                     if (process.env.NODE_ENV === 'development' && 
-                        credentials.email === 'customer@coffee.com' && 
-                        credentials.password === 'customer123') {
+                        email === 'customer@coffee.com' && 
+                        password === 'customer123') {
                         return {
                             id: 'mock-customer-id',
                             name: 'Mock Customer',
@@ -80,7 +86,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
                     await dbConnect();
                     
-                    const user = await User.findOne({ email: credentials.email });
+                    const user = await User.findOne({ email });
 
                     if (!user) {
                         return null;
@@ -92,7 +98,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                     }
 
                     const isPasswordValid = await bcrypt.compare(
-                        credentials.password,
+                        password,
                         user.password
                     );
 
@@ -116,7 +122,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         })
     ],
     callbacks: {
-        async signIn({ user, account, profile }) {
+        async signIn({ user, account }) {
             // Log sign-in attempt for debugging
             console.log("Sign-in attempt:", { user, account });
             return true;
@@ -133,9 +139,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.id = user.id;
-                token.role = (user as any).role || 'customer';
-                token.strikes = (user as any).strikes || 0;
-                token.suspendedUntil = (user as any).suspendedUntil || null;
+                token.role = user.role || 'customer';
+                token.strikes = user.strikes || 0;
+                token.suspendedUntil = user.suspendedUntil || null;
             }
             
             // Allow updating session data

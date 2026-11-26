@@ -1,42 +1,47 @@
 'use client';
 
 import Image from 'next/image';
-
-// FIX: Removed unused IOrderItem import
-import { useParams } from 'next/navigation';
-import { useState, useEffect, useCallback } from 'react';
-import { IOrder, IProduct } from '@/types';
-import QRDisplay from '@/components/order/QRDisplay';
-import CountdownTimer from '@/components/order/CountdownTimer';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, ArrowLeft, RefreshCw, XCircle, CheckCircle, Coffee, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { ArrowLeft, CheckCircle2, Loader2, SunMedium } from 'lucide-react';
+import { IOrder, IProduct } from '@/types';
+import PickupTicket from '@/components/order/PickupTicket';
+import CountdownTimer from '@/components/order/CountdownTimer';
+import StatusStepper from '@/components/order/StatusStepper';
+import { ORDER_STATUS, describeCustomizations, orderCode } from '@/lib/order-status';
+import { cn } from '@/lib/utils';
 
 export default function OrderPage() {
     const { id } = useParams();
+    const { data: session } = useSession();
     const [order, setOrder] = useState<IOrder | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [statusNote, setStatusNote] = useState('');
+    const lastStatus = useRef<string | null>(null);
 
-    const fetchOrder = useCallback(async (silent = false) => {
-        if (!silent) setLoading(true);
-        try {
-            const res = await fetch(`/api/orders/${id}`);
-            const data = await res.json();
-            if (data.success) {
-                setOrder(data.data);
-                setError('');
-            } else {
-                setError(data.error);
+    const fetchOrder = useCallback(
+        async (silent = false) => {
+            if (!silent) setLoading(true);
+            try {
+                const res = await fetch(`/api/orders/${id}`);
+                const data = await res.json();
+                if (data.success) {
+                    setOrder(data.data);
+                    setError('');
+                } else {
+                    setError(data.error || 'We couldn’t find that order.');
+                }
+            } catch {
+                setError('We couldn’t load your order. Check your connection and try again.');
+            } finally {
+                if (!silent) setLoading(false);
             }
-        } catch (err: unknown) {
-            setError((err as Error).message || 'Failed to sync with command center.');
-        } finally {
-            if (!silent) setLoading(false);
-        }
-    }, [id]);
+        },
+        [id]
+    );
 
     useEffect(() => {
         if (id) fetchOrder();
@@ -44,140 +49,141 @@ export default function OrderPage() {
 
     useEffect(() => {
         if (!order || ['completed', 'expired', 'cancelled'].includes(order.status)) return;
-
-        const interval = setInterval(() => {
-            fetchOrder(true);
-        }, 10000);
-
+        const interval = setInterval(() => fetchOrder(true), 10000);
         return () => clearInterval(interval);
     }, [order, fetchOrder]);
 
+    // Announce status changes (not every poll) to screen readers.
+    useEffect(() => {
+        if (!order) return;
+        if (lastStatus.current && lastStatus.current !== order.status) {
+            setStatusNote(order.status === 'ready' ? 'Your order is ready. Show your code at the counter.' : `Order status: ${ORDER_STATUS[order.status].label}.`);
+        }
+        lastStatus.current = order.status;
+    }, [order]);
+
     if (loading && !order) {
         return (
-            <div className="flex h-[70vh] flex-col items-center justify-center gap-6">
-                <div className="relative">
-                    <Loader2 className="w-12 h-12 animate-spin text-primary" />
-                    <Coffee className="w-6 h-6 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary/40" />
-                </div>
-                <p className="text-muted-foreground animate-pulse font-black uppercase tracking-[0.2em] text-[10px]">Synchronizing Order Data...</p>
+            <div className="flex h-[60vh] items-center justify-center" role="status">
+                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                <span className="sr-only">Loading your order</span>
             </div>
         );
     }
 
-    if (error) {
+    if (error || !order) {
         return (
-            <div className="container px-4 py-20 flex flex-col items-center text-center gap-8 max-w-xl mx-auto">
-                <div className="p-8 rounded-[2rem] bg-destructive/10 text-destructive border border-destructive/20 shadow-2xl flex flex-col items-center gap-6">
-                    <XCircle className="w-16 h-16" />
-                    <div className="space-y-2">
-                        <h1 className="text-4xl font-black uppercase tracking-tighter italic">Protocol Error</h1>
-                        <p className="text-muted-foreground font-bold text-sm tracking-tight">{error}</p>
-                    </div>
-                    <Button asChild variant="outline" className="w-full h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] border-destructive/20 hover:bg-destructive/10">
-                        <Link href="/menu">Return to Marketplace</Link>
-                    </Button>
-                </div>
+            <div className="mx-auto max-w-md px-4 py-20 text-center">
+                <h1 className="display text-3xl font-semibold">We couldn’t find that order</h1>
+                <p className="mt-2 text-muted-foreground">{error}</p>
+                <Link href="/history" className="mt-6 inline-flex h-12 items-center rounded-full bg-primary px-6 font-medium text-primary-foreground">
+                    See your orders
+                </Link>
             </div>
         );
     }
 
-    if (!order) return null;
+    const code = orderCode(order._id);
+    const ready = order.status === 'ready';
+    const done = order.status === 'completed';
+    const dead = order.status === 'expired' || order.status === 'cancelled';
 
-    const statusMap = {
-        pending: { label: 'Awaiting Confirmation', icon: <Loader2 className="w-4 h-4 animate-spin" />, color: 'bg-muted border-border/40 text-muted-foreground' },
-        confirmed: { label: 'Brewing in Progress', icon: <RefreshCw className="w-4 h-4 animate-spin text-amber-500" />, color: 'bg-amber-500/10 border-amber-500/20 text-amber-500 shadow-amber-500/5' },
-        ready: { label: 'Ready for Pickup', icon: <CheckCircle className="w-4 h-4 text-emerald-500" />, color: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-emerald-500/5' },
-        completed: { label: 'Pickup Successful', icon: <CheckCircle className="w-4 h-4 text-primary" />, color: 'bg-primary/10 border-primary/20 text-primary shadow-primary/5' },
-        expired: { label: 'Pickup Window Lapsed', icon: <XCircle className="w-4 h-4 text-destructive" />, color: 'bg-destructive/10 border-destructive/20 text-destructive' },
-        cancelled: { label: 'Order Terminated', icon: <XCircle className="w-4 h-4 text-destructive" />, color: 'bg-destructive/10 border-destructive/20 text-destructive' },
-    };
+    const headline = ready
+        ? 'Your order is ready'
+        : done
+          ? 'Enjoy your coffee'
+          : order.status === 'expired'
+            ? 'This order expired'
+            : order.status === 'cancelled'
+              ? 'This order was cancelled'
+              : order.status === 'confirmed'
+                ? 'We’re making your drinks'
+                : 'We’ve got your order';
 
-    const statusStyle = statusMap[order.status as keyof typeof statusMap];
+    const sub = ready
+        ? 'Show the code below at the counter.'
+        : done
+          ? 'Thanks for picking up on time.'
+          : order.status === 'expired'
+            ? 'It wasn’t picked up within 30 minutes, so it counts as a missed pickup.'
+            : order.status === 'cancelled'
+              ? 'You can place a new order any time.'
+              : 'We’ll let you know here when it’s ready.';
 
     return (
-        <div className="container px-4 py-10 max-w-2xl mx-auto space-y-12 pb-20">
-            <header className="flex flex-col gap-6 items-center text-center">
-                <Link href="/menu" className="flex items-center text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors group self-start">
-                    <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-                    Back to Marketplace
-                </Link>
+        <div className="mx-auto max-w-5xl px-4 pt-6 md:px-6 md:pt-10">
+            <Link href="/history" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="size-4" aria-hidden="true" /> Your orders
+            </Link>
 
-                <div className="space-y-4">
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={order.status}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 1.1 }}
-                            className={`inline-flex items-center gap-3 px-6 py-2.5 rounded-full border shadow-xl font-black uppercase tracking-widest text-[10px] italic ${statusStyle.color}`}
-                        >
-                            {statusStyle.icon}
-                            {statusStyle.label}
-                        </motion.div>
-                    </AnimatePresence>
-                    <h1 className="text-5xl font-black tracking-tighter uppercase italic">Order <span className="text-primary">Status</span></h1>
-                    <p className="text-muted-foreground text-[10px] font-black tracking-[0.2em] uppercase opacity-40">Verification Token ID: #{order._id.toString().slice(-12).toUpperCase()}</p>
-                </div>
+            <header className={cn('mt-4 rounded-3xl p-5 md:p-6', ready ? 'bg-st-ready text-background' : 'bg-transparent px-0 md:px-0')}>
+                <h1 className="display flex items-center gap-3 text-4xl font-semibold md:text-5xl">
+                    {ready && <CheckCircle2 className="size-9 shrink-0" aria-hidden="true" />}
+                    {headline}
+                </h1>
+                <p className={cn('mt-2 text-lg', ready ? 'text-background/90' : 'text-muted-foreground')}>{sub}</p>
             </header>
+            <p className="sr-only" aria-live="polite">{statusNote}</p>
 
-            <div className="grid grid-cols-1 gap-12">
-                {/* QR Section */}
-                <div className="space-y-8 flex flex-col items-center">
-                    <div className="p-4 rounded-[3rem] bg-card/40 backdrop-blur-md border border-border/40 shadow-2xl relative group">
-                        <QRDisplay value={order.qrCode} status={order.status} />
-                        <div className="absolute inset-0 rounded-[3rem] border-2 border-primary/10 group-hover:border-primary/30 transition-colors pointer-events-none" />
-                    </div>
-                    <div className="text-center space-y-3 px-8">
-                        <p className="text-xs font-bold text-muted-foreground leading-relaxed max-w-sm mx-auto">
-                            Present this encrypted token to the barista to authorize your pickup.
-                        </p>
-                        <div className="inline-flex items-center gap-2 bg-primary/5 px-3 py-1 rounded-full border border-primary/10">
-                            <Clock className="w-3 h-3 text-primary" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-primary/80">30-Minute Security Window Active</span>
-                        </div>
-                    </div>
+            {!dead && (
+                <div className="mt-6">
+                    <StatusStepper status={order.status} />
                 </div>
+            )}
 
-                {/* Status & Summary Cards */}
+            <div className="mt-8 grid gap-8 md:grid-cols-[minmax(0,26rem)_1fr] md:items-start">
                 <div className="space-y-6">
-                    <CountdownTimer expiresAt={order.expiresAt} status={order.status} />
-
-                    <Card className="bg-card/40 backdrop-blur-md border-border/40 shadow-xl overflow-hidden rounded-[2rem]">
-                        <CardHeader className="p-8 border-b border-border/10 bg-muted/5">
-                            <div className="flex justify-between items-center">
-                                <CardTitle className="text-lg font-black uppercase tracking-tighter italic">Selection Manifest</CardTitle>
-                                <div className="text-3xl font-black text-primary tracking-tighter italic">${order.total.toFixed(2)}</div>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-8 space-y-6">
-                            <div className="space-y-4">
-                                {/* FIX: Replaced 'any' type with proper IOrderItem type from order.items */}
-                                {order.items.map((item, idx: number) => {
-                                    const product = item.product as IProduct;
-                                    return (
-                                        <div key={idx} className="flex gap-4 group">
-                                            <div className="w-14 h-14 rounded-2xl overflow-hidden border border-border/20 shadow-md">
-                                                <Image src={product?.imageUrl || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&q=80&w=200'} alt={product?.name || 'Unknown'} width={56} height={56} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" unoptimized />
-                                            </div>
-                                            <div className="flex-grow space-y-1">
-                                                <div className="flex justify-between font-black text-sm tracking-tight uppercase italic group-hover:text-primary transition-colors">
-                                                    <span>{item.quantity}x {product?.name || 'Unknown Protocol'}</span>
-                                                    <span className="opacity-60 tabular-nums">${(item.unitPrice * item.quantity).toFixed(2)}</span>
-                                                </div>
-                                                <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest flex flex-wrap gap-x-2 opacity-50">
-                                                    {item.customizations.size} {item.customizations.sugarLevel} {item.customizations.iceOption}
-                                                    {item.customizations.addOns && item.customizations.addOns.length > 0 && (
-                                                        <span className="text-primary/40">+ {item.customizations.addOns.join(', ')}</span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <PickupTicket code={code} qrValue={order.qrCode} status={order.status} name={session?.user?.name} holdUntil={order.expiresAt} />
+                    {!dead && !done && (
+                        <>
+                            <CountdownTimer expiresAt={order.expiresAt} status={order.status} />
+                            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <SunMedium className="size-4 shrink-0" aria-hidden="true" />
+                                Turn your screen brightness up at the counter so the code scans first time.
+                            </p>
+                        </>
+                    )}
+                    {(dead || done) && (
+                        <Link href="/menu" className="flex h-12 items-center justify-center rounded-full bg-primary font-medium text-primary-foreground">
+                            Order again
+                        </Link>
+                    )}
                 </div>
+
+                <section aria-labelledby="order-items" className="rounded-3xl border bg-card">
+                    <div className="flex items-baseline justify-between px-5 pt-5">
+                        <h2 id="order-items" className="text-lg font-medium">Your items</h2>
+                        <span className="text-sm text-muted-foreground">
+                            {new Date(order.createdAt).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}
+                        </span>
+                    </div>
+                    <ul className="divide-y px-5">
+                        {order.items.map((item, idx) => {
+                            const product = item.product as IProduct;
+                            return (
+                                <li key={idx} className="flex gap-3 py-4">
+                                    <div className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-muted">
+                                        {product?.imageUrl && <Image src={product.imageUrl} alt="" fill sizes="56px" className="object-cover" unoptimized />}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-baseline justify-between gap-2">
+                                            <p className="font-medium">
+                                                {item.quantity > 1 && <span className="tabular-nums">{item.quantity} × </span>}
+                                                {product?.name || 'Drink'}
+                                            </p>
+                                            <p className="tabular-nums">${(item.unitPrice * item.quantity).toFixed(2)}</p>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">{describeCustomizations(item.customizations)}</p>
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                    <div className="flex items-baseline justify-between border-t px-5 py-4">
+                        <span className="font-medium">Total</span>
+                        <span className="display text-2xl font-semibold tabular-nums">${order.total.toFixed(2)}</span>
+                    </div>
+                </section>
             </div>
         </div>
     );
