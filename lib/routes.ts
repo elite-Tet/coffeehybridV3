@@ -18,11 +18,3 @@ export const ROUTES = {
   ORDER: (id: string) => `/order/${id}`,
 } as const;
 
-/**
- * Legal/External links
- */
-export const LEGAL_LINKS = {
-  PRIVACY: '#privacy',
-  TERMS: '#terms',
-  CONTACT: '#contact',
-} as const;

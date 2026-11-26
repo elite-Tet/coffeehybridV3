@@ -19,15 +19,15 @@ export default function AccountSheet({ children, side = 'right' }: { children: R
     return (
         <Sheet>
             <SheetTrigger asChild>{children}</SheetTrigger>
-            <SheetContent side={side} className={side === 'bottom' ? 'rounded-t-3xl safe-bottom' : 'w-full sm:max-w-sm'}>
+            <SheetContent side={side} className={side === 'bottom' ? 'rounded-t-2xl bg-panel safe-bottom' : 'w-full bg-panel sm:max-w-sm'}>
                 <SheetHeader className="text-left">
-                    <SheetTitle className="display text-2xl">{user.name || 'Your account'}</SheetTitle>
+                    <SheetTitle className="display text-[2rem]">{user.name || 'Your account'}</SheetTitle>
                     <SheetDescription>{user.email}</SheetDescription>
                 </SheetHeader>
 
                 <div className="space-y-6 px-4 pb-6">
-                    <section aria-labelledby="pickup-record" className="rounded-2xl bg-muted p-4 space-y-2">
-                        <h2 id="pickup-record" className="font-medium">Pickup record</h2>
+                    <section aria-labelledby="pickup-record" className="space-y-2 rounded-xl bg-slat p-4">
+                        <h2 id="pickup-record" className="display text-xl">Pickup record</h2>
                         <StrikeDots strikes={user.strikes ?? 0} />
                         <p className="text-sm text-muted-foreground">
                             {paused
@@ -38,18 +38,18 @@ export default function AccountSheet({ children, side = 'right' }: { children: R
 
                     {(user.role === 'staff' || user.role === 'admin') && (
                         <nav aria-label="Workspace" className="grid gap-2">
-                            <Button asChild variant="outline" className="justify-start h-11">
+                            <Button asChild variant="outline" className="h-11 justify-start rounded-sm">
                                 <Link href="/staff"><ScanLine aria-hidden="true" /> Staff order board</Link>
                             </Button>
                             {user.role === 'admin' && (
-                                <Button asChild variant="outline" className="justify-start h-11">
+                                <Button asChild variant="outline" className="h-11 justify-start rounded-sm">
                                     <Link href="/admin"><LayoutDashboard aria-hidden="true" /> Admin</Link>
                                 </Button>
                             )}
                         </nav>
                     )}
 
-                    <Button variant="ghost" className="w-full justify-start h-11 text-destructive hover:text-destructive" onClick={() => signOut({ callbackUrl: '/' })}>
+                    <Button variant="ghost" className="h-11 w-full justify-start rounded-sm text-destructive hover:text-destructive" onClick={() => signOut({ callbackUrl: '/' })}>
                         <LogOut aria-hidden="true" /> Sign out
                     </Button>
                 </div>

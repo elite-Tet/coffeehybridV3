@@ -1,26 +1,34 @@
 import Link from 'next/link';
 import Logo from '@/components/layout/Logo';
-import { LEGAL_LINKS, ROUTES } from '@/lib/routes';
+import { ROUTES } from '@/lib/routes';
+
+const linkClass = 'inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground hover:underline';
 
 export default function SiteFooter() {
     return (
-        <footer className="mt-24 border-t">
-            <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-[2fr_1fr] md:px-6">
-                <div className="space-y-3">
+        <footer className="mt-24 border-t-2 border-slat text-sm text-muted-foreground">
+            <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:grid-cols-[2fr_1fr_1fr] md:px-12">
+                <div>
                     <Logo />
-                    <p className="max-w-xs text-sm text-muted-foreground">
-                        Order on your phone, show your code at the counter, and take your coffee. No line.
-                    </p>
+                    <p className="mt-2">Open daily, 7:00 to 19:00.</p>
                 </div>
 
-                <nav aria-label="Footer" className="flex flex-col gap-2 text-sm">
-                    <Link href={ROUTES.MENU} className="text-muted-foreground hover:text-foreground">Menu</Link>
-                    <Link href="/#how-it-works" className="text-muted-foreground hover:text-foreground">How pickup works</Link>
-                    <a href={LEGAL_LINKS.PRIVACY} className="text-muted-foreground hover:text-foreground">Privacy</a>
-                    <a href={LEGAL_LINKS.TERMS} className="text-muted-foreground hover:text-foreground">Terms</a>
+                <nav aria-label="Order">
+                    <ul className="grid">
+                        <li><Link href={ROUTES.MENU} className={linkClass}>Menu</Link></li>
+                        <li><Link href="/history" className={linkClass}>Your orders</Link></li>
+                        <li><Link href={ROUTES.LOGIN} className={linkClass}>Sign in</Link></li>
+                    </ul>
+                </nav>
+
+                <nav aria-label="About">
+                    <ul className="grid">
+                        <li><Link href="/#how-it-works" className={linkClass}>How pickup works</Link></li>
+                        <li><Link href="/register" className={linkClass}>Create an account</Link></li>
+                    </ul>
                 </nav>
             </div>
-            <p className="mx-auto max-w-6xl px-4 pb-8 text-xs text-muted-foreground md:px-6">© {new Date().getFullYear()} CoffeeHybrid</p>
+            <p className="mx-auto max-w-7xl px-4 pb-8 text-xs md:px-12">© {new Date().getFullYear()} CoffeeHybrid</p>
         </footer>
     );
 }
