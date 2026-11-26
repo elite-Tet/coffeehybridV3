@@ -2,7 +2,7 @@ import QRScanner from '@/features/staff/QRScanner';
 
 export default function ScanPage() {
     return (
-        <div className="container px-4 py-8 max-w-2xl mx-auto">
+        <div className="mx-auto max-w-2xl">
             <QRScanner />
         </div>
     );

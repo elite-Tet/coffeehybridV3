@@ -1,14 +1,12 @@
-// FIX: Replaced 'any' with proper type definition for scanResult
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft, CheckCircle, XCircle, RefreshCw, AlertTriangle } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Loader2, CheckCircle2, XCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 import { orderCode } from '@/features/orders/order-status';
+import { boardButtonPrimary } from '@/components/layout/board-styles';
+import { cn } from '@/lib/utils';
 
 interface ScanResult {
     success: boolean;
@@ -47,7 +45,7 @@ export default function QRScanner() {
             if (data.success) {
                 setScanResult({ success: true, data: data.data });
                 setManualCode('');
-                toast.success('Order Verified!');
+                toast.success('Order verified');
                 // Optionally clear scanner on success
                 scannerRef.current?.clear();
             } else {
@@ -125,98 +123,71 @@ export default function QRScanner() {
         setIsVerifying(false);
     };
 
+    const resultCode = scanResult?.data?._id ? orderCode(scanResult.data._id.toString()) : null;
+
     return (
-        <div className="w-full max-w-2xl mx-auto space-y-6">
-            <header className="flex items-center gap-4">
-                <Button asChild variant="outline" size="icon" className="rounded-full h-12 w-12 hover:bg-primary/10">
-                    <Link href="/staff" aria-label="Back to the order queue">
-                        <ArrowLeft className="w-5 h-5" aria-hidden="true" />
-                    </Link>
-                </Button>
-                <div>
-                    <h1 className="text-3xl font-black tracking-tighter">QR VERIFICATION</h1>
-                    <p className="text-muted-foreground text-sm font-medium">Verify pickup tokens instantly.</p>
-                </div>
+        <div className="w-full space-y-6">
+            <header>
+                <h1 className="display text-section">Scan pickups</h1>
+                <p className="mt-2 text-muted-foreground">Scan the QR code on the customer’s ticket, or type its code below.</p>
             </header>
 
-            <AnimatePresence mode="wait">
-                {scanResult ? (
-                    <motion.div
-                        key="result"
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 1.1 }}
-                        className="p-8 rounded-[2rem] bg-card/60 backdrop-blur-xl border border-border/40 shadow-2xl flex flex-col items-center text-center gap-8"
-                    >
-                        {scanResult.success ? (
-                            <>
-                                <div className="p-6 rounded-full bg-st-ready/10 text-st-ready border border-st-ready/10">
-                                    <CheckCircle className="w-16 h-16" />
-                                </div>
-                                <div className="space-y-2">
-                                    <h2 className="text-4xl font-black tracking-tighter text-st-ready uppercase">Verified</h2>
-                                    <p className="font-mono text-xs text-muted-foreground">ORDER {scanResult.data ? orderCode(scanResult.data._id.toString()) : ''}</p>
-                                </div>
-                                <div className="w-full p-6 rounded-3xl bg-st-ready/5 border border-st-ready/10 flex items-center justify-between font-bold">
-                                    <span>Customer Ready</span>
-                                    <span className="text-st-ready">Pick up now</span>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <div className="p-6 rounded-full bg-destructive/10 text-destructive border border-destructive/10">
-                                    <XCircle className="w-16 h-16" />
-                                </div>
-                                <div className="space-y-2">
-                                    <h2 className="text-4xl font-black tracking-tighter text-destructive uppercase">Error</h2>
-                                    <p className="font-bold text-lg opacity-80">{scanResult.error}</p>
-                                    {scanResult.data?._id && (
-                                        <p className="font-mono text-xs text-muted-foreground">ORDER {orderCode(scanResult.data._id.toString())}</p>
-                                    )}
-                                </div>
-                                <div className="w-full p-4 rounded-3xl bg-destructive/5 text-destructive font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
-                                    <AlertTriangle className="w-4 h-4" />
-                                    Strike Applied Automatically
-                                </div>
-                            </>
+            {scanResult ? (
+                <section
+                    aria-labelledby="scan-result-title"
+                    className="rounded-xl bg-panel p-6 shadow-[inset_0_0_0_1px_rgb(244_234_221/0.06)] sm:p-8"
+                >
+                    <div role="status" className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="min-w-0">
+                            <h2
+                                id="scan-result-title"
+                                className={cn('display flex items-center gap-2.5 text-[2.5rem] leading-none', scanResult.success ? 'text-signal' : 'text-destructive')}
+                            >
+                                {scanResult.success
+                                    ? <CheckCircle2 className="size-8 shrink-0" aria-hidden="true" />
+                                    : <XCircle className="size-8 shrink-0" aria-hidden="true" />}
+                                {scanResult.success ? 'Verified' : 'Not verified'}
+                            </h2>
+                            <p className="mt-3 text-lg">
+                                {scanResult.success ? 'Hand the order over. It’s marked as picked up.' : scanResult.error}
+                            </p>
+                        </div>
+                        {resultCode && (
+                            <p className="ticket-number text-[clamp(3rem,12vw,4.5rem)]">
+                                <span className="sr-only">Order </span>{resultCode}
+                            </p>
                         )}
+                    </div>
 
-                        <Button
-                            onClick={resetScan}
-                            className={`w-full h-16 text-xl font-black gap-2 transition-all duration-500 ${scanResult.success ? 'bg-signal text-roast hover:bg-signal/85' : 'bg-primary'}`}
-                        >
-                            <RefreshCw className="w-6 h-6" />
-                            Next Customer
-                        </Button>
-                    </motion.div>
-                ) : (
-                    <motion.div
-                        key="scanner"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="relative overflow-hidden rounded-[2rem] border border-border/40 bg-black backdrop-blur-md shadow-2xl"
-                    >
-                        <div id="reader" className="w-full overflow-hidden [&>div]:!shadow-none [&>div]:!border-none" />
+                    {/* Only an expired order comes back with its data; that's the case where the API adds a strike. */}
+                    {!scanResult.success && scanResult.data?._id && (
+                        <p className="mt-5 flex items-start gap-2 rounded-sm bg-st-expired/12 px-4 py-3 text-sm">
+                            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden="true" />
+                            The pickup window closed, so the customer’s record gets a missed-pickup strike.
+                        </p>
+                    )}
 
-                        {/* Scanner Laser (Pure visual effect) */}
-                        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-signal/80 shadow-[0_0_15px_var(--signal)] z-10 pointer-events-none opacity-50" />
+                    <button type="button" onClick={resetScan} className={cn(boardButtonPrimary, 'mt-6 w-full')}>
+                        <RefreshCw className="size-5" aria-hidden="true" />
+                        Next customer
+                    </button>
+                </section>
+            ) : (
+                <div className="relative overflow-hidden rounded-xl bg-black">
+                    <div id="reader" className="w-full overflow-hidden [&>div]:!border-none [&>div]:!shadow-none" />
 
-                        {isVerifying ? (
-                            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-50">
-                                <Loader2 className="w-12 h-12 animate-spin text-primary" />
-                                <p className="font-black text-sm uppercase tracking-widest text-primary animate-pulse">Verifying...</p>
-                            </div>
-                        ) : (
-                            <div className="absolute inset-x-0 bottom-0 p-8 bg-gradient-to-t from-black to-transparent pointer-events-none z-20">
-                                <div className="flex items-center justify-center gap-3 text-white/70 animate-pulse">
-                                    <span className="w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_theme(colors.primary.DEFAULT)]" />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Scanning Active...</span>
-                                </div>
-                            </div>
-                        )}
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                    {isVerifying ? (
+                        <div className="absolute inset-0 z-50 flex items-center justify-center gap-3 bg-roast/85" role="status">
+                            <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                            <span className="font-bold">Checking the code…</span>
+                        </div>
+                    ) : (
+                        <p className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black to-transparent px-6 pb-5 pt-10 text-center text-sm text-white/80">
+                            Hold the ticket’s QR code inside the frame.
+                        </p>
+                    )}
+                </div>
+            )}
 
             {!scanResult && (
                 <form
