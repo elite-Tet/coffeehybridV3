@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import dbConnect from '@/lib/mongodb';
-import Order from '@/models/Order';
-import Category from '@/models/Category';
+import { auth } from '@/server/auth';
+import dbConnect from '@/server/db';
+import Order from '@/server/models/Order';
+import Category from '@/server/models/Category';
 import { ExtendedUser } from '@/types';
 
 export const GET = async () => {

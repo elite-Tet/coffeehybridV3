@@ -7,10 +7,10 @@ import { useSession } from 'next-auth/react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ArrowLeft, CheckCircle2, Loader2, SunMedium } from 'lucide-react';
 import { IOrder, IProduct } from '@/types';
-import PickupTicket from '@/components/order/PickupTicket';
-import CountdownTimer from '@/components/order/CountdownTimer';
-import StatusStepper from '@/components/order/StatusStepper';
-import { ORDER_STATUS, describeCustomizations, orderCode } from '@/lib/order-status';
+import PickupTicket from '@/features/orders/PickupTicket';
+import CountdownTimer from '@/features/orders/CountdownTimer';
+import StatusStepper from '@/features/orders/StatusStepper';
+import { ORDER_STATUS, describeCustomizations, orderCode } from '@/features/orders/order-status';
 import { cn } from '@/lib/utils';
 
 export default function OrderPage() {

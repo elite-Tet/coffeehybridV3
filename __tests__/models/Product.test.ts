@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import Product from '@/models/Product';
+import Product from '@/server/models/Product';
 import { Types } from 'mongoose';
 
 type ValidationError = {

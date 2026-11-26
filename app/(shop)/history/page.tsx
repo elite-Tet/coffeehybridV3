@@ -7,10 +7,10 @@ import { useRouter } from 'next/navigation';
 import { format, isToday, isYesterday } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCartStore } from '@/store/cart.store';
+import { useCartStore } from '@/features/cart/cart.store';
 import { IOrder, IProduct } from '@/types';
-import StatusChip from '@/components/order/StatusChip';
-import { ACTIVE_STATUSES, orderCode } from '@/lib/order-status';
+import StatusChip from '@/features/orders/StatusChip';
+import { ACTIVE_STATUSES, orderCode } from '@/features/orders/order-status';
 
 function dayLabel(d: Date) {
     if (isToday(d)) return 'Today';

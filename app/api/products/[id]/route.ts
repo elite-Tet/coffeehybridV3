@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import dbConnect from '@/lib/mongodb';
-import Product from '@/models/Product';
+import { auth } from '@/server/auth';
+import dbConnect from '@/server/db';
+import Product from '@/server/models/Product';
 import { ExtendedUser } from '@/types';
 
 export const GET = async (req: Request, { params }: { params: Promise<{ id: string }> }) => {

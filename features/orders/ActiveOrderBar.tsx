@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { QrCode } from 'lucide-react';
 import type { IOrder } from '@/types';
-import { ACTIVE_STATUSES, ORDER_STATUS, orderCode } from '@/lib/order-status';
+import { ACTIVE_STATUSES, ORDER_STATUS, orderCode } from '@/features/orders/order-status';
 import { cn } from '@/lib/utils';
 
 function minutesLeft(expiresAt: Date | string) {

@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import Logo from '@/components/shared/Logo';
+import Logo from '@/components/layout/Logo';
 import { LEGAL_LINKS, ROUTES } from '@/lib/routes';
 
-export default function Footer() {
+export default function SiteFooter() {
     return (
         <footer className="mt-24 border-t">
             <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-[2fr_1fr] md:px-6">

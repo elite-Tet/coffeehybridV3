@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import dbConnect from '@/lib/mongodb';
-import Order from '@/models/Order';
-import User from '@/models/User';
-import Strike from '@/models/Strike';
+import { auth } from '@/server/auth';
+import dbConnect from '@/server/db';
+import Order from '@/server/models/Order';
+import User from '@/server/models/User';
+import Strike from '@/server/models/Strike';
 import { ExtendedUser } from '@/types';
 import { isExpired } from '@/lib/qr';
 import { applyStrike } from '@/lib/strikes';

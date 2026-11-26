@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/mongodb';
-import Product from '@/models/Product';
-import Category from '@/models/Category';
+import dbConnect from '@/server/db';
+import Product from '@/server/models/Product';
+import Category from '@/server/models/Category';
 import { mockProducts } from '@/lib/mock-data';
 
 export const GET = async () => {

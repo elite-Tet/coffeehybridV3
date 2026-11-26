@@ -1,4 +1,4 @@
-import { ORDER_STATUS } from '@/lib/order-status';
+import { ORDER_STATUS } from '@/features/orders/order-status';
 import type { OrderStatus } from '@/types';
 import { cn } from '@/lib/utils';
 

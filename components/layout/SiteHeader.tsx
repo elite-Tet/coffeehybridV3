@@ -5,13 +5,13 @@ import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useCartStore } from '@/store/cart.store';
-import CartDrawer from '@/components/cart/CartDrawer';
-import AccountSheet from '@/components/shared/AccountSheet';
-import Logo from '@/components/shared/Logo';
+import { useCartStore } from '@/features/cart/cart.store';
+import CartDrawer from '@/features/cart/CartDrawer';
+import AccountSheet from '@/components/layout/AccountSheet';
+import Logo from '@/components/layout/Logo';
 import { cn } from '@/lib/utils';
 
-export default function Navbar() {
+export default function SiteHeader() {
     const { data: session, status } = useSession();
     const pathname = usePathname();
     const cartCount = useCartStore((s) => s.items.reduce((acc, i) => acc + i.quantity, 0));

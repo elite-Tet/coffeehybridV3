@@ -5,8 +5,8 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
-import DrinkCarousel from '@/components/menu/DrinkCarousel';
-import PickupTicket from '@/components/order/PickupTicket';
+import DrinkCarousel from '@/features/home/DrinkCarousel';
+import PickupTicket from '@/features/orders/PickupTicket';
 import { ExtendedUser } from '@/types';
 
 const STEPS = [

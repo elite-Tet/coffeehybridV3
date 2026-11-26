@@ -5,8 +5,8 @@ import { signOut, useSession } from 'next-auth/react';
 import { LayoutDashboard, LogOut, ScanLine } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import ThemeToggle from '@/components/shared/ThemeToggle';
-import StrikeDots from '@/components/order/StrikeDots';
+import ThemeToggle from '@/components/layout/ThemeToggle';
+import StrikeDots from '@/features/orders/StrikeDots';
 import { ExtendedUser } from '@/types';
 import { isSuspended } from '@/lib/strikes';
 

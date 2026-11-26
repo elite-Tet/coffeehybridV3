@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import dbConnect from '@/lib/mongodb';
-import Order from '@/models/Order';
-import User from '@/models/User';
-import Product from '@/models/Product';
+import { auth } from '@/server/auth';
+import dbConnect from '@/server/db';
+import Order from '@/server/models/Order';
+import User from '@/server/models/User';
+import Product from '@/server/models/Product';
 import { IOrderItem, IProduct } from '@/types';
 import { generateQRCode, calculateExpirationTime } from '@/lib/qr';
 import { isSuspended } from '@/lib/strikes';

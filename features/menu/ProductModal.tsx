@@ -8,7 +8,7 @@ import { IProduct, ISize } from '@/types';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useCartStore } from '@/store/cart.store';
+import { useCartStore } from '@/features/cart/cart.store';
 import { cn } from '@/lib/utils';
 
 interface ProductModalProps {

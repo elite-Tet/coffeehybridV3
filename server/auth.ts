@@ -3,8 +3,8 @@ import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 // import { MongoDBAdapter } from "@auth/mongodb-adapter";
-import dbConnect from "./mongodb";
-import User from "@/models/User"; 
+import dbConnect from "./db";
+import User from "@/server/models/User"; 
 import { Role } from "@/types";
 
 // Type augmentation for NextAuth v5

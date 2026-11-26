@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import NextAuthProvider from "@/components/providers/NextAuthProvider";
-import ThemeProvider from "@/components/providers/ThemeProvider";
-import SiteChrome from "@/components/shared/SiteChrome";
+import NextAuthProvider from "@/components/layout/providers/NextAuthProvider";
+import ThemeProvider from "@/components/layout/providers/ThemeProvider";
+import SiteChrome from "@/components/layout/SiteChrome";
 import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({

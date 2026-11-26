@@ -4,9 +4,9 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Minus, Plus, Trash2 } from 'lucide-react';
-import { useCartStore } from '@/store/cart.store';
+import { useCartStore } from '@/features/cart/cart.store';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { describeCustomizations } from '@/lib/order-status';
+import { describeCustomizations } from '@/features/orders/order-status';
 import { cn } from '@/lib/utils';
 
 export default function CartDrawer({ children, side = 'right' }: { children: React.ReactNode; side?: 'right' | 'bottom' }) {

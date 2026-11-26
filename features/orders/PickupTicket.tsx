@@ -1,6 +1,6 @@
 import { QRCodeSVG } from 'qrcode.react';
 import type { OrderStatus } from '@/types';
-import StatusChip from '@/components/order/StatusChip';
+import StatusChip from '@/features/orders/StatusChip';
 import { cn } from '@/lib/utils';
 
 interface PickupTicketProps {

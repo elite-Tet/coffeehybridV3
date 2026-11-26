@@ -7,11 +7,11 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, ArrowLeft, Loader2, Minus, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCartStore } from '@/store/cart.store';
+import { useCartStore } from '@/features/cart/cart.store';
 import { ExtendedUser } from '@/types';
 import { isSuspended } from '@/lib/strikes';
-import { describeCustomizations } from '@/lib/order-status';
-import StrikeDots from '@/components/order/StrikeDots';
+import { describeCustomizations } from '@/features/orders/order-status';
+import StrikeDots from '@/features/orders/StrikeDots';
 
 export default function CheckoutPage() {
     const { data: session, status } = useSession();

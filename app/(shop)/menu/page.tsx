@@ -5,10 +5,10 @@ import { useSession } from 'next-auth/react';
 import { Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { IProduct, ICategory } from '@/types';
-import CategoryTabs from '@/components/menu/CategoryTabs';
-import ProductCard from '@/components/menu/ProductCard';
-import ProductModal from '@/components/menu/ProductModal';
-import { useCartStore } from '@/store/cart.store';
+import CategoryTabs from '@/features/menu/CategoryTabs';
+import ProductCard from '@/features/menu/ProductCard';
+import ProductModal from '@/features/menu/ProductModal';
+import { useCartStore } from '@/features/cart/cart.store';
 
 function greeting() {
     const h = new Date().getHours();

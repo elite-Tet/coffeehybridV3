@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
-import { auth } from '@/lib/auth';
+import { auth } from '@/server/auth';
 import { ExtendedUser } from '@/types';
-import Sidebar from '@/components/staff/Sidebar';
+import Sidebar from '@/features/staff/Sidebar';
 
 export default async function StaffLayout({ children }: { children: React.ReactNode }) {
     const session = await auth();

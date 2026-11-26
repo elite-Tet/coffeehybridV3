@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import dbConnect from '@/lib/mongodb';
-import Order from '@/models/Order';
+import { auth } from '@/server/auth';
+import dbConnect from '@/server/db';
+import Order from '@/server/models/Order';
 import { ExtendedUser } from '@/types';
 
 export const dynamic = 'force-dynamic';

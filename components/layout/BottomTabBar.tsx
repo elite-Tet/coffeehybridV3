@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Coffee, Receipt, ShoppingBag, UserRound } from 'lucide-react';
-import { useCartStore } from '@/store/cart.store';
-import CartDrawer from '@/components/cart/CartDrawer';
-import AccountSheet from '@/components/shared/AccountSheet';
+import { useCartStore } from '@/features/cart/cart.store';
+import CartDrawer from '@/features/cart/CartDrawer';
+import AccountSheet from '@/components/layout/AccountSheet';
 import { cn } from '@/lib/utils';
 
 const tab = 'flex flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-xs min-h-11';
