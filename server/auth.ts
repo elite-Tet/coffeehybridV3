@@ -2,7 +2,6 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-// import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import dbConnect from "./db";
 import User from "@/server/models/User"; 
 import { Role } from "@/types";
@@ -30,7 +29,6 @@ declare module "next-auth" {
 export const { auth, handlers, signIn, signOut } = NextAuth({
     debug: true, // Enable debugging to troubleshoot sign-in issues
     trustHost: true,
-    // adapter: MongoDBAdapter(clientPromise), // Temporarily disabled to allow sign-in without DB
     providers: [
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID,

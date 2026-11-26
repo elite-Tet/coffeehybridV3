@@ -5,7 +5,6 @@ import { signOut, useSession } from 'next-auth/react';
 import { LayoutDashboard, LogOut, ScanLine } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import ThemeToggle from '@/components/layout/ThemeToggle';
 import StrikeDots from '@/features/orders/StrikeDots';
 import { ExtendedUser } from '@/types';
 import { isSuspended } from '@/lib/strikes';
@@ -35,11 +34,6 @@ export default function AccountSheet({ children, side = 'right' }: { children: R
                                 ? `Ordering is paused until ${new Date(user.suspendedUntil!).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}. You can still browse the menu.`
                                 : 'We hold each order for 30 minutes. Three missed pickups pause ordering for 24 hours.'}
                         </p>
-                    </section>
-
-                    <section aria-labelledby="appearance" className="space-y-2">
-                        <h2 id="appearance" className="font-medium">Appearance</h2>
-                        <ThemeToggle />
                     </section>
 
                     {(user.role === 'staff' || user.role === 'admin') && (
