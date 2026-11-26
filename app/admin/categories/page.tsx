@@ -1,20 +1,8 @@
-// FIX: Removed unused imports Check and X
 'use client';
 
 import { useState, useEffect } from 'react';
 import { ICategory } from '@/types';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-    Plus,
-    Edit2,
-    Trash2,
-    ChevronRight,
-    Loader2,
-    LayoutGrid,
-    Search
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { EyeOff, Loader2, Pencil, Plus, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import {
     Dialog,
@@ -24,7 +12,9 @@ import {
     DialogDescription,
     DialogFooter
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
+import { boardButtonGhost, boardButtonPrimary } from '@/components/layout/board-styles';
+import { adminField, adminIconButton, adminLabel, adminPanel } from '@/features/admin/admin-styles';
+import { cn } from '@/lib/utils';
 
 export default function CategoryManagement() {
     const [categories, setCategories] = useState<ICategory[]>([]);
@@ -117,140 +107,137 @@ export default function CategoryManagement() {
 
     if (loading) {
         return (
-            <div className="flex h-[70vh] flex-col items-center justify-center gap-4">
-                <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                <p className="text-muted-foreground animate-pulse font-bold uppercase tracking-widest text-[10px]">Configuring Schemas...</p>
+            <div className="flex h-[60vh] items-center justify-center" role="status">
+                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                <span className="sr-only">Loading categories</span>
             </div>
         );
     }
 
     return (
-        <div className="max-w-5xl mx-auto space-y-12 pb-20">
-            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+        <div className="mx-auto max-w-5xl">
+            <header className="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                    <h1 className="text-4xl font-black tracking-tighter uppercase">Category <span className="text-primary italic">Architecture</span></h1>
-                    <p className="text-muted-foreground font-medium text-sm">Managing the structural organization of our menu.</p>
+                    <h1 className="display text-section">Categories</h1>
+                    <p className="mt-2 text-muted-foreground">Groups on the menu, shown in sort order.</p>
                 </div>
-                <Button onClick={openCreateDialog} className="h-12 rounded-2xl gap-2 font-bold px-6 shadow-xl hover:scale-105 transition-transform">
-                    <Plus className="w-5 h-5" />
-                    New Category
-                </Button>
+                <button type="button" onClick={openCreateDialog} className={boardButtonPrimary}>
+                    <Plus className="size-5" aria-hidden="true" />
+                    New category
+                </button>
             </header>
 
-            <div className="flex flex-col gap-8">
-                <div className="relative max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search categories..."
-                        className="pl-10 h-12 bg-card/40 border-border/60 rounded-xl"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </div>
-
-                <div className="grid grid-cols-1 gap-4">
-                    <AnimatePresence mode="popLayout">
-                        {filtered.map((category) => (
-                            <motion.div
-                                key={category._id.toString()}
-                                layout
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: 10 }}
-                                className="group p-6 rounded-3xl bg-card/40 backdrop-blur-md border border-border/40 hover:border-primary/40 transition-all flex items-center justify-between shadow-lg"
-                            >
-                                <div className="flex items-center gap-6">
-                                    <div className="p-4 rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
-                                        <LayoutGrid className="w-6 h-6" />
-                                    </div>
-                                    <div>
-                                        <div className="flex items-center gap-3">
-                                            <h2 className="text-xl font-black tracking-tight">{category.name}</h2>
-                                            <span className="bg-muted px-2 py-0.5 rounded-full text-[10px] font-black uppercase text-muted-foreground">Order: {category.sortOrder}</span>
-                                        </div>
-                                        <p className="text-sm text-muted-foreground font-medium">{category.description || 'No description provided.'}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Button variant="ghost" size="icon" className="rounded-xl hover:bg-primary/10 hover:text-primary" onClick={() => openEditDialog(category)} aria-label={`Edit ${category.name}`}>
-                                        <Edit2 className="w-5 h-5" aria-hidden="true" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" className="rounded-xl hover:bg-destructive/10 hover:text-destructive" onClick={() => handleDelete(category._id.toString())} aria-label={`Delete ${category.name}`}>
-                                        <Trash2 className="w-5 h-5" aria-hidden="true" />
-                                    </Button>
-                                    <div className="w-px h-8 bg-border/20 mx-2" />
-                                    <ChevronRight className="w-5 h-5 text-muted-foreground/30 group-hover:text-primary transition-colors" />
-                                </div>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                </div>
+            <div className="relative mt-8 max-w-md">
+                <label htmlFor="category-search" className="sr-only">Search categories</label>
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                <input
+                    id="category-search"
+                    type="search"
+                    placeholder="Search categories"
+                    className={cn(adminField, 'pl-9')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
             </div>
 
+            {filtered.length === 0 ? (
+                <p className="mt-6 rounded-xl border-2 border-dashed border-slat px-4 py-10 text-center text-muted-foreground">
+                    {categories.length === 0 ? 'No categories yet.' : `No categories match “${searchQuery}”.`}
+                </p>
+            ) : (
+                <ul className={cn(adminPanel, 'mt-6 space-y-1.5 p-3')}>
+                    {filtered.map((category) => (
+                        <li key={category._id.toString()} className="flex items-center gap-4 rounded-sm bg-slat px-4 py-3">
+                            <span className="display w-10 shrink-0 text-center text-[1.75rem] tabular-nums text-muted-foreground">
+                                <span className="sr-only">Sort order </span>{category.sortOrder}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                    <h2 className="display text-[1.5rem] leading-none">{category.name}</h2>
+                                    {!category.isActive && (
+                                        <span className="rounded-sm bg-st-expired/12 px-2 py-0.5 text-sm font-bold">Hidden</span>
+                                    )}
+                                </div>
+                                <p className="mt-1 text-sm text-muted-foreground">{category.description || 'No description'}</p>
+                            </div>
+                            <div className="flex shrink-0">
+                                <button type="button" className={adminIconButton} onClick={() => openEditDialog(category)} aria-label={`Edit ${category.name}`}>
+                                    <Pencil className="size-4" aria-hidden="true" />
+                                </button>
+                                <button
+                                    type="button"
+                                    className={cn(adminIconButton, 'hover:text-destructive')}
+                                    onClick={() => handleDelete(category._id.toString())}
+                                    aria-label={`Hide ${category.name}`}
+                                >
+                                    <EyeOff className="size-4" aria-hidden="true" />
+                                </button>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            )}
+
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-2xl border-border/40">
+                <DialogContent className="bg-panel p-6 sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic">
-                            {editingCategory ? 'Modify Category' : 'Architect Context'}
+                        <DialogTitle className="display text-[2rem] leading-none">
+                            {editingCategory ? 'Edit category' : 'New category'}
                         </DialogTitle>
                         <DialogDescription>
-                            Define the structure for a new group of products.
+                            A group of drinks on the menu.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <form onSubmit={handleSubmit} className="space-y-6 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Category Identity</Label>
-                            <Input
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="space-y-1.5">
+                            <label htmlFor="name" className={adminLabel}>Name</label>
+                            <input
                                 id="name"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                placeholder="e.g. Espresso Collective"
-                                className="h-12 bg-background/40 border-border/40 font-bold"
+                                placeholder="e.g. Espresso"
+                                className={adminField}
                                 required
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="description" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Context Description</Label>
-                            <Input
+                        <div className="space-y-1.5">
+                            <label htmlFor="description" className={adminLabel}>Description</label>
+                            <input
                                 id="description"
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                placeholder="Core espresso-based experience."
-                                className="h-12 bg-background/40 border-border/40 font-medium"
+                                placeholder="Short line under the heading on the menu"
+                                className={adminField}
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="sortOrder" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Sequence Rank</Label>
-                                <Input
-                                    id="sortOrder"
-                                    type="number"
-                                    value={formData.sortOrder}
-                                    onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) })}
-                                    className="h-12 bg-background/40 border-border/40 font-black"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="isActive" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">System State</Label>
-                                <div className="flex items-center h-12 gap-2">
-                                    <input
-                                        type="checkbox"
-                                        id="isActive"
-                                        checked={formData.isActive}
-                                        onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                                        className="w-5 h-5 rounded-md border-border/40 bg-background/40"
-                                    />
-                                    <span className="font-bold text-sm">Active in Storefront</span>
-                                </div>
-                            </div>
+                        <div className="space-y-1.5">
+                            <label htmlFor="sortOrder" className={adminLabel}>Sort order</label>
+                            <input
+                                id="sortOrder"
+                                type="number"
+                                value={formData.sortOrder}
+                                onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) })}
+                                className={cn(adminField, 'w-28 tabular-nums')}
+                                aria-describedby="sortOrder-hint"
+                            />
+                            <p id="sortOrder-hint" className="text-sm text-muted-foreground">Lower numbers come first.</p>
                         </div>
-                        <DialogFooter className="pt-4">
-                            <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-xl h-12 flex-1">Abort</Button>
-                            <Button type="submit" className="rounded-xl h-12 flex-1 font-black gap-2 uppercase tracking-tighter">
-                                {editingCategory ? <Edit2 className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                                {editingCategory ? 'Update Unit' : 'Deploy Category'}
-                            </Button>
+                        <label htmlFor="isActive" className="flex min-h-11 cursor-pointer items-center gap-3 rounded-sm bg-slat/60 px-4 py-3">
+                            <input
+                                type="checkbox"
+                                id="isActive"
+                                checked={formData.isActive}
+                                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                                className="size-5 shrink-0"
+                            />
+                            <span className="font-bold">Show on the menu</span>
+                        </label>
+                        <DialogFooter className="gap-3 pt-2 sm:gap-3">
+                            <button type="button" onClick={() => setIsDialogOpen(false)} className={cn(boardButtonGhost, 'flex-1')}>Cancel</button>
+                            <button type="submit" className={cn(boardButtonPrimary, 'flex-1')}>
+                                {editingCategory ? 'Save changes' : 'Create category'}
+                            </button>
                         </DialogFooter>
                     </form>
                 </DialogContent>

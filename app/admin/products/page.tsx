@@ -1,21 +1,10 @@
-// FIX: Removed unused imports
 'use client';
 
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { IProduct, ICategory } from '@/types';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-    Plus,
-    Edit2,
-    Trash2,
-    Loader2,
-    Search,
-    Tag
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { EyeOff, Loader2, Pencil, Plus, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { IProduct, ICategory } from '@/types';
 import {
     Dialog,
     DialogContent,
@@ -24,9 +13,33 @@ import {
     DialogDescription,
     DialogFooter
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { boardButtonGhost, boardButtonPrimary } from '@/components/layout/board-styles';
+import { adminField, adminIconButton, adminLabel, adminOutlineButton, adminPanel } from '@/features/admin/admin-styles';
+import { cn } from '@/lib/utils';
+
+interface ProductFormData {
+    name: string;
+    description: string;
+    basePrice: number;
+    image: string;
+    category: string;
+    isAvailable: boolean;
+    customizationOptions: {
+        sizes: Array<{ label: string; priceModifier: number }>;
+        sugarLevels: string[];
+        iceOptions: string[];
+        addOns: Array<{ label: string; price: number }>;
+    };
+}
+
+const DEFAULT_OPTIONS: ProductFormData['customizationOptions'] = {
+    sizes: [{ label: 'Small', priceModifier: 0 }, { label: 'Medium', priceModifier: 0.5 }, { label: 'Large', priceModifier: 1.0 }],
+    sugarLevels: ['0%', '25%', '50%', '100%'],
+    iceOptions: ['No Ice', 'Less Ice', 'Normal', 'Extra Ice'],
+    addOns: [{ label: 'Extra Shot', price: 0.75 }, { label: 'Oat Milk', price: 0.50 }]
+};
+
+const money = (n: number) => `$${n.toFixed(2)}`;
 
 export default function ProductManagement() {
     const [products, setProducts] = useState<IProduct[]>([]);
@@ -36,22 +49,6 @@ export default function ProductManagement() {
     const [editingProduct, setEditingProduct] = useState<IProduct | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
-    // FIX: Replaced 'any' with proper type definition for formData
-    interface ProductFormData {
-        name: string;
-        description: string;
-        basePrice: number;
-        image: string;
-        category: string;
-        isAvailable: boolean;
-        customizationOptions: {
-            sizes: Array<{ label: string; priceModifier: number }>;
-            sugarLevels: string[];
-            iceOptions: string[];
-            addOns: Array<{ label: string; price: number }>;
-        };
-    }
-
     const [formData, setFormData] = useState<ProductFormData>({
         name: '',
         description: '',
@@ -59,12 +56,7 @@ export default function ProductManagement() {
         image: '',
         category: '',
         isAvailable: true,
-        customizationOptions: {
-            sizes: [{ label: 'Small', priceModifier: 0 }, { label: 'Medium', priceModifier: 0.5 }, { label: 'Large', priceModifier: 1.0 }],
-            sugarLevels: ['0%', '25%', '50%', '100%'],
-            iceOptions: ['No Ice', 'Less Ice', 'Normal', 'Extra Ice'],
-            addOns: [{ label: 'Extra Shot', price: 0.75 }, { label: 'Oat Milk', price: 0.50 }]
-        }
+        customizationOptions: DEFAULT_OPTIONS
     });
 
     const fetchAll = async () => {
@@ -95,12 +87,7 @@ export default function ProductManagement() {
             image: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&q=80&w=800',
             category: categories[0]?._id ? String(categories[0]._id) : '',
             isAvailable: true,
-            customizationOptions: {
-                sizes: [{ label: 'Small', priceModifier: 0 }, { label: 'Medium', priceModifier: 0.5 }, { label: 'Large', priceModifier: 1.0 }],
-                sugarLevels: ['0%', '25%', '50%', '100%'],
-                iceOptions: ['No Ice', 'Less Ice', 'Normal', 'Extra Ice'],
-                addOns: [{ label: 'Extra Shot', price: 0.75 }, { label: 'Oat Milk', price: 0.50 }]
-            }
+            customizationOptions: DEFAULT_OPTIONS
         });
         setIsDialogOpen(true);
     };
@@ -118,6 +105,15 @@ export default function ProductManagement() {
         });
         setIsDialogOpen(true);
     };
+
+    // Size rows: edit, add, remove. Saved with the rest of the form through the same POST/PATCH.
+    const sizes = formData.customizationOptions.sizes;
+    const setSizes = (next: ProductFormData['customizationOptions']['sizes']) =>
+        setFormData((f) => ({ ...f, customizationOptions: { ...f.customizationOptions, sizes: next } }));
+    const updateSize = (index: number, patch: Partial<{ label: string; priceModifier: number }>) =>
+        setSizes(sizes.map((s, i) => (i === index ? { ...s, ...patch } : s)));
+    const addSize = () => setSizes([...sizes, { label: '', priceModifier: 0 }]);
+    const removeSize = (index: number) => setSizes(sizes.filter((_, i) => i !== index));
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -163,142 +159,152 @@ export default function ProductManagement() {
 
     if (loading) {
         return (
-            <div className="flex h-[70vh] flex-col items-center justify-center gap-4">
-                <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                <p className="text-muted-foreground animate-pulse font-bold uppercase tracking-widest text-[10px]">Populating Units...</p>
+            <div className="flex h-[60vh] items-center justify-center" role="status">
+                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                <span className="sr-only">Loading products</span>
             </div>
         );
     }
 
     return (
-        <div className="max-w-7xl mx-auto space-y-12 pb-20">
-            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+        <div className="mx-auto max-w-7xl">
+            <header className="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                    <h1 className="text-4xl font-black tracking-tighter uppercase">Product <span className="text-primary italic">Inventory</span></h1>
-                    <p className="text-muted-foreground font-medium text-sm">Managing the fine details of our sensory offerings.</p>
+                    <h1 className="display text-section">Products</h1>
+                    <p className="mt-2 text-muted-foreground">
+                        {products.length} {products.length === 1 ? 'product' : 'products'}.
+                    </p>
                 </div>
-                <Button onClick={openCreateDialog} className="h-12 rounded-2xl gap-2 font-bold px-6 shadow-xl hover:scale-105 transition-transform uppercase italic">
-                    <Plus className="w-5 h-5" />
-                    Forge Product
-                </Button>
+                <button type="button" onClick={openCreateDialog} className={boardButtonPrimary}>
+                    <Plus className="size-5" aria-hidden="true" />
+                    New product
+                </button>
             </header>
 
-            <div className="flex flex-col gap-8">
-                <div className="relative max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search products..."
-                        className="pl-10 h-12 bg-card/40 border-border/60 rounded-xl"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    <AnimatePresence mode="popLayout">
-                        {filtered.map((product) => (
-                            <motion.div
-                                key={product._id.toString()}
-                                layout
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                            >
-                                <Card className="overflow-hidden bg-card/40 backdrop-blur-md border border-border/40 hover:border-primary/40 transition-all duration-500 group relative">
-                                    <div className="aspect-square overflow-hidden relative">
-                                        <Image
-                                            src={product.imageUrl} width={240} height={240}
-                                            alt={product.name}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
-                                        <Badge className={`absolute top-4 right-4 ${product.isAvailable ? 'bg-roast/85 text-st-ready' : 'bg-roast/85 text-destructive'} border-none font-black text-[8px] uppercase tracking-widest`}>
-                                            {product.isAvailable ? 'Available' : 'Sold Out'}
-                                        </Badge>
-                                    </div>
-                                    <CardContent className="p-5 space-y-4">
-                                        <div className="space-y-1">
-                                            <div className="flex justify-between items-start gap-2">
-                                                <h2 className="font-black text-lg tracking-tight truncate">{product.name}</h2>
-                                                <span className="font-black text-primary italic text-lg">${product.basePrice.toFixed(2)}</span>
-                                            </div>
-                                            <p className="text-xs text-muted-foreground font-medium line-clamp-1">{product.description}</p>
-                                        </div>
-
-                                        <div className="flex items-center justify-between pt-2 border-t border-border/10">
-                                            <Badge variant="outline" className="text-[10px] font-black uppercase border-border/40 text-muted-foreground">
-                                                {typeof product.category === 'object' ? (product.category as ICategory).name : 'Internal ID'}
-                                            </Badge>
-                                            <div className="flex gap-1">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary" onClick={() => openEditDialog(product)} aria-label={`Edit ${product.name}`}>
-                                                    <Edit2 className="w-4 h-4" aria-hidden="true" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive" onClick={() => handleDelete(product._id.toString())} aria-label={`Delete ${product.name}`}>
-                                                    <Trash2 className="w-4 h-4" aria-hidden="true" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                </div>
+            <div className="relative mt-8 max-w-md">
+                <label htmlFor="product-search" className="sr-only">Search products</label>
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                <input
+                    id="product-search"
+                    type="search"
+                    placeholder="Search products"
+                    className={cn(adminField, 'pl-9')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
             </div>
 
+            {filtered.length === 0 ? (
+                <p className="mt-6 rounded-xl border-2 border-dashed border-slat px-4 py-10 text-center text-muted-foreground">
+                    {products.length === 0 ? 'No products yet.' : `No products match “${searchQuery}”.`}
+                </p>
+            ) : (
+                <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {filtered.map((product) => {
+                        const category = typeof product.category === 'object' ? (product.category as ICategory).name : null;
+                        return (
+                            <li key={product._id.toString()} className={cn(adminPanel, 'flex flex-col overflow-hidden')}>
+                                <div className="relative aspect-[4/3] bg-slat">
+                                    <Image
+                                        src={product.imageUrl}
+                                        alt=""
+                                        fill
+                                        sizes="(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw"
+                                        className={cn('object-cover', !product.isAvailable && 'opacity-50 grayscale')}
+                                    />
+                                    <span
+                                        className={cn(
+                                            'absolute left-3 top-3 rounded-sm px-2.5 py-1 text-sm font-bold',
+                                            product.isAvailable ? 'bg-roast/90 text-foreground' : 'bg-roast/90 text-destructive'
+                                        )}
+                                    >
+                                        {product.isAvailable ? 'Available' : 'Sold out'}
+                                    </span>
+                                </div>
+                                <div className="flex flex-1 flex-col p-4">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <h2 className="display text-[1.5rem] leading-none">{product.name}</h2>
+                                        <span className="font-bold tabular-nums">{money(product.basePrice)}</span>
+                                    </div>
+                                    <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{product.description}</p>
+                                    <div className="mt-auto flex items-center justify-between gap-2 pt-4">
+                                        <span className="text-sm text-muted-foreground">{category ?? 'No category'}</span>
+                                        <div className="flex">
+                                            <button type="button" className={adminIconButton} onClick={() => openEditDialog(product)} aria-label={`Edit ${product.name}`}>
+                                                <Pencil className="size-4" aria-hidden="true" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={cn(adminIconButton, 'hover:text-destructive')}
+                                                onClick={() => handleDelete(product._id.toString())}
+                                                aria-label={`Mark ${product.name} as sold out`}
+                                            >
+                                                <EyeOff className="size-4" aria-hidden="true" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-2xl bg-card/90 backdrop-blur-2xl border-border/40 max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-h-[90vh] overflow-y-auto bg-panel p-6 sm:max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic">
-                            {editingProduct ? 'Recode Product' : 'Initialize Product Unit'}
+                        <DialogTitle className="display text-[2rem] leading-none">
+                            {editingProduct ? 'Edit product' : 'New product'}
                         </DialogTitle>
                         <DialogDescription>
-                            Configure the parameters and sensory defaults for this SKU.
+                            Name, price and the options customers can pick.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <form onSubmit={handleSubmit} className="space-y-8 py-4 px-1">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {/* General Info */}
-                            <div className="space-y-6">
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Identity Component</Label>
-                                    <Input
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                            <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <label htmlFor="product-name" className={adminLabel}>Name</label>
+                                    <input
+                                        id="product-name"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        placeholder="Product Name"
-                                        className="h-12 bg-background/40 border-border/40 font-bold"
+                                        className={adminField}
                                         required
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Visual URI</Label>
-                                    <Input
+                                <div className="space-y-1.5">
+                                    <label htmlFor="product-image" className={adminLabel}>Image URL</label>
+                                    <input
+                                        id="product-image"
                                         value={formData.image}
                                         onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                                        placeholder="Image URL"
-                                        className="h-12 bg-background/40 border-border/40 font-medium text-xs"
+                                        className={adminField}
                                         required
                                     />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Base Value ($)</Label>
-                                        <Input
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1.5">
+                                        <label htmlFor="product-price" className={adminLabel}>Base price ($)</label>
+                                        <input
+                                            id="product-price"
                                             type="number"
                                             step="0.01"
+                                            min="0"
                                             value={formData.basePrice}
                                             onChange={(e) => setFormData({ ...formData, basePrice: parseFloat(e.target.value) })}
-                                            className="h-12 bg-background/40 border-border/40 font-black"
+                                            className={cn(adminField, 'tabular-nums')}
                                             required
                                         />
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Classifier</Label>
+                                    <div className="space-y-1.5">
+                                        <label htmlFor="product-category" className={adminLabel}>Category</label>
                                         <select
+                                            id="product-category"
                                             value={formData.category}
                                             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                            className="w-full h-12 bg-background/40 border-border/40 rounded-md px-3 font-bold text-sm focus: focus:ring-1 focus:ring-primary"
+                                            className={adminField}
                                         >
                                             {categories.map(c => (
                                                 <option key={c._id.toString()} value={c._id.toString()}>{c.name}</option>
@@ -306,66 +312,88 @@ export default function ProductManagement() {
                                         </select>
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Technical Narrative</Label>
+                                <div className="space-y-1.5">
+                                    <label htmlFor="product-description" className={adminLabel}>Description</label>
                                     <textarea
+                                        id="product-description"
                                         value={formData.description}
                                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                        className="w-full h-24 bg-background/40 border-border/40 rounded-md p-3 font-medium text-sm focus: focus:ring-1 focus:ring-primary"
-                                        placeholder="Product description and tasting notes..."
+                                        className={cn(adminField, 'h-28 py-2 leading-snug')}
+                                        placeholder="Tasting notes customers see on the menu"
                                     />
                                 </div>
                             </div>
 
-                            {/* Configuration (Customization) */}
-                            <div className="space-y-6">
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground pt-1">Sensory Configuration</h4>
-
-                                <div className="p-4 rounded-3xl bg-muted/20 border border-border/10 space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-black tracking-wider uppercase opacity-80">Size Options</span>
-                                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6" aria-label="Add size option"><Plus className="w-3 h-3" aria-hidden="true" /></Button>
-                                    </div>
-                                    {/* FIX: Removed 'any' type, TypeScript infers from formData.customizationOptions.sizes */}
-                                    {formData.customizationOptions.sizes.map((s, i: number) => (
-                                        <div key={i} className="flex gap-2">
-                                            <Input className="h-8 bg-background/40 text-[10px] font-bold" value={s.label} />
-                                            <Input className="h-8 bg-background/40 text-[10px] font-black w-20" type="number" step="0.5" value={s.priceModifier} />
+                            <div className="space-y-4">
+                                <fieldset className="space-y-3 rounded-sm bg-slat/60 p-4">
+                                    <legend className="display float-left mb-1 w-full text-[1.25rem] leading-none">Sizes</legend>
+                                    <p className="clear-both text-sm text-muted-foreground">Price change is added to the base price.</p>
+                                    {sizes.length === 0 && <p className="text-sm text-muted-foreground">No sizes. Customers get one standard size.</p>}
+                                    {sizes.map((s, i) => (
+                                        <div key={i} className="flex items-center gap-2">
+                                            <label htmlFor={`size-${i}-label`} className="sr-only">Size {i + 1} name</label>
+                                            <input
+                                                id={`size-${i}-label`}
+                                                value={s.label}
+                                                onChange={(e) => updateSize(i, { label: e.target.value })}
+                                                placeholder="Size name"
+                                                className={adminField}
+                                                required
+                                            />
+                                            <label htmlFor={`size-${i}-price`} className="sr-only">Size {i + 1} price change in dollars</label>
+                                            <input
+                                                id={`size-${i}-price`}
+                                                type="number"
+                                                step="0.05"
+                                                value={s.priceModifier}
+                                                onChange={(e) => updateSize(i, { priceModifier: Number.isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber })}
+                                                className={cn(adminField, 'w-24 shrink-0 tabular-nums')}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => removeSize(i)}
+                                                className={cn(adminIconButton, 'hover:text-destructive')}
+                                                aria-label={`Remove size ${s.label || i + 1}`}
+                                            >
+                                                <X className="size-4" aria-hidden="true" />
+                                            </button>
                                         </div>
                                     ))}
-                                </div>
+                                    <button type="button" onClick={addSize} className={adminOutlineButton}>
+                                        <Plus className="size-4" aria-hidden="true" />
+                                        Add size
+                                    </button>
+                                </fieldset>
 
-                                <div className="p-4 rounded-3xl bg-muted/20 border border-border/10 space-y-2">
-                                    <span className="text-[10px] font-black tracking-wider uppercase opacity-80">Add-On Modules</span>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {/* FIX: Removed 'any' type, TypeScript infers from formData.customizationOptions.addOns */}
-                                        {formData.customizationOptions.addOns.map((a, i: number) => (
-                                            <div key={i} className="flex items-center justify-between p-2 rounded-xl bg-background/40 border border-border/20">
-                                                <span className="text-[9px] font-bold">{a.label}</span>
-                                                <span className="text-[9px] font-black text-primary">${a.price.toFixed(2)}</span>
-                                            </div>
+                                <div className="space-y-2 rounded-sm bg-slat/60 p-4">
+                                    <h3 className="display text-[1.25rem] leading-none">Add-ons</h3>
+                                    <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                                        {formData.customizationOptions.addOns.map((a, i) => (
+                                            <li key={i} className="flex items-center justify-between gap-2 rounded-sm bg-roast px-3 py-2 text-sm">
+                                                <span>{a.label}</span>
+                                                <span className="tabular-nums text-muted-foreground">+{money(a.price)}</span>
+                                            </li>
                                         ))}
-                                    </div>
+                                    </ul>
                                 </div>
 
-                                <div className="flex items-center justify-between p-4 rounded-3xl bg-primary/5 border border-primary/20">
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Active Status</span>
+                                <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-sm bg-slat/60 px-4 py-3">
                                     <input
                                         type="checkbox"
                                         checked={formData.isAvailable}
                                         onChange={(e) => setFormData({ ...formData, isAvailable: e.target.checked })}
-                                        className="w-5 h-5 rounded-md accent-primary"
+                                        className="size-5 shrink-0"
                                     />
-                                </div>
+                                    <span className="font-bold">Available to order</span>
+                                </label>
                             </div>
                         </div>
 
-                        <DialogFooter className="pt-4 gap-4">
-                            <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-xl h-14 flex-1 font-bold">Abort Logic</Button>
-                            <Button type="submit" className="rounded-xl h-14 flex-1 font-black gap-2 uppercase tracking-tighter italic shadow-xl">
-                                {editingProduct ? <Edit2 className="w-5 h-5" /> : <Tag className="w-5 h-5" />}
-                                {editingProduct ? 'Commit Changes' : 'Execute Deploy'}
-                            </Button>
+                        <DialogFooter className="gap-3 sm:gap-3">
+                            <button type="button" onClick={() => setIsDialogOpen(false)} className={cn(boardButtonGhost, 'flex-1')}>Cancel</button>
+                            <button type="submit" className={cn(boardButtonPrimary, 'flex-1')}>
+                                {editingProduct ? 'Save changes' : 'Create product'}
+                            </button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
