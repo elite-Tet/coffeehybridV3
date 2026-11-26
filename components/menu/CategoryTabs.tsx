@@ -1,7 +1,7 @@
 'use client';
 
 import { ICategory } from '@/types';
-import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface CategoryTabsProps {
     categories: ICategory[];
@@ -10,33 +10,25 @@ interface CategoryTabsProps {
 }
 
 export default function CategoryTabs({ categories, activeCategory, onSelect }: CategoryTabsProps) {
+    const chip = (active: boolean) =>
+        cn(
+            'shrink-0 rounded-full border px-4 py-2 text-sm transition-colors',
+            active ? 'border-primary bg-primary text-primary-foreground' : 'bg-card text-foreground hover:bg-muted'
+        );
+
     return (
-        <div className="flex flex-wrap gap-2 mb-8 justify-center items-center py-4 px-2">
-            <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => onSelect(null)}
-                className={`px-4 py-2 rounded-full border border-border/60 text-sm font-bold transition-all ${activeCategory === null
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-card/40 hover:bg-card/60'
-                    }`}
-            >
-                All Drinks
-            </motion.button>
-            {categories.map((category) => (
-                <motion.button
-                    key={category._id as string}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => onSelect(category._id as string)}
-                    className={`px-6 py-2 rounded-full border border-border/60 text-sm font-bold transition-all ${activeCategory === category._id as string
-                        ? 'bg-primary text-primary-foreground border-primary shadow-lg'
-                        : 'bg-card/40 hover:bg-card/60'
-                        }`}
-                >
-                    {category.name}
-                </motion.button>
-            ))}
+        <div role="radiogroup" aria-label="Category" className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:px-0">
+            <button type="button" role="radio" aria-checked={activeCategory === null} onClick={() => onSelect(null)} className={chip(activeCategory === null)}>
+                All
+            </button>
+            {categories.map((category) => {
+                const id = category._id as string;
+                return (
+                    <button key={id} type="button" role="radio" aria-checked={activeCategory === id} onClick={() => onSelect(id)} className={chip(activeCategory === id)}>
+                        {category.name}
+                    </button>
+                );
+            })}
         </div>
     );
 }

@@ -1,14 +1,15 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useMemo } from 'react';
+import { Minus, Plus } from 'lucide-react';
+import { toast } from 'sonner';
 import { IProduct, ISize } from '@/types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useCartStore } from '@/store/cart.store';
-import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface ProductModalProps {
     product: IProduct | null;
@@ -16,150 +17,158 @@ interface ProductModalProps {
     onOpenChange: (open: boolean) => void;
 }
 
+function ChoiceGroup({
+    legend,
+    name,
+    value,
+    onChange,
+    options,
+}: {
+    legend: string;
+    name: string;
+    value: string;
+    onChange: (v: string) => void;
+    options: { value: string; label: string; hint?: string }[];
+}) {
+    return (
+        <fieldset className="space-y-2.5">
+            <legend className="font-medium">{legend}</legend>
+            <RadioGroup value={value} onValueChange={onChange} className="flex flex-wrap gap-2" aria-label={legend}>
+                {options.map((o) => {
+                    const id = `${name}-${o.value}`;
+                    const active = value === o.value;
+                    return (
+                        <label
+                            key={o.value}
+                            htmlFor={id}
+                            className={cn(
+                                'flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border px-4 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring',
+                                active ? 'border-primary bg-primary text-primary-foreground' : 'bg-card hover:bg-muted'
+                            )}
+                        >
+                            <span className="sr-only"><RadioGroupItem value={o.value} id={id} /></span>
+                            {o.label}
+                            {o.hint && <span className={active ? 'opacity-80' : 'text-muted-foreground'}>{o.hint}</span>}
+                        </label>
+                    );
+                })}
+            </RadioGroup>
+        </fieldset>
+    );
+}
+
+/** Customize sheet: slides up from the bottom on phones, centred dialog on larger screens. */
 export default function ProductModal({ product, open, onOpenChange }: ProductModalProps) {
     const addItem = useCartStore((state) => state.addItem);
+    const updateQuantity = useCartStore((state) => state.updateQuantity);
 
-    // Customization states initialized from product prop
-    // Since this component is keyed by product ID, it will re-initialize when product changes
     const [selectedSize, setSelectedSize] = useState<ISize | null>(product?.customizationOptions.sizes[0] || null);
     const [selectedSugar, setSelectedSugar] = useState<string>(product?.customizationOptions.sugarLevels[0] || '');
     const [selectedIce, setSelectedIce] = useState<string>(product?.customizationOptions.iceOptions[0] || '');
     const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
+    const [quantity, setQuantity] = useState(1);
+    const [imgOk, setImgOk] = useState(Boolean(product?.imageUrl));
 
-    // Calculate total price as derived state
-    const totalPrice = useMemo(() => {
+    const unitPrice = useMemo(() => {
         if (!product) return 0;
-
         let price = product.basePrice;
         if (selectedSize) price += selectedSize.priceModifier;
-
-        selectedAddOns.forEach(addOnLabel => {
-            const addOn = product.customizationOptions.addOns.find(a => a.label === addOnLabel);
+        selectedAddOns.forEach((label) => {
+            const addOn = product.customizationOptions.addOns.find((a) => a.label === label);
             if (addOn) price += addOn.price;
         });
-
         return price;
     }, [product, selectedSize, selectedAddOns]);
 
     if (!product) return null;
+    const o = product.customizationOptions;
 
     const handleAddToCart = () => {
-        addItem(product, {
-            size: selectedSize?.label,
-            sugarLevel: selectedSugar,
-            iceOption: selectedIce,
-            addOns: selectedAddOns
-        }, totalPrice);
-
-        toast.success(`Added ${product.name} to cart!`);
+        addItem(product, { size: selectedSize?.label, sugarLevel: selectedSugar, iceOption: selectedIce, addOns: selectedAddOns }, unitPrice);
+        if (quantity > 1) updateQuantity(useCartStore.getState().items.length - 1, quantity);
+        toast.success(quantity > 1 ? `${quantity} × ${product.name} added` : `${product.name} added`);
         onOpenChange(false);
     };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-lg border-border/40 max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold">{product.name}</DialogTitle>
-                    <DialogDescription>${totalPrice.toFixed(2)} — Personalize your drink</DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-6 py-4">
-                    {/* Size Selection */}
-                    {product.customizationOptions.sizes.length > 0 && (
-                        <div className="space-y-3">
-                            <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Select Size</h4>
-                            <RadioGroup
-                                value={selectedSize?.label}
-                                onValueChange={(val) => setSelectedSize(product.customizationOptions.sizes.find(s => s.label === val) || null)}
-                                className="flex flex-col gap-2"
-                            >
-                                {product.customizationOptions.sizes.map((size) => (
-                                    <div key={size.label} className="flex items-center space-x-3 rounded-lg border border-border/40 p-3 hover:bg-muted/50 transition-colors cursor-pointer">
-                                        <RadioGroupItem value={size.label} id={`size-${size.label}`} />
-                                        <Label htmlFor={`size-${size.label}`} className="flex-grow flex justify-between cursor-pointer">
-                                            <span>{size.label}</span>
-                                            <span className="text-muted-foreground">+{size.priceModifier.toFixed(2)}</span>
-                                        </Label>
-                                    </div>
-                                ))}
-                            </RadioGroup>
+            <DialogContent
+                className="flex max-h-[92dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg max-sm:top-auto max-sm:bottom-0 max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-b-none max-sm:rounded-t-3xl data-open:max-sm:slide-in-from-bottom-10 data-open:max-sm:zoom-in-100"
+            >
+                <div className="overflow-y-auto overscroll-contain">
+                    {imgOk && (
+                        <div className="relative aspect-[16/9] w-full bg-muted">
+                            <Image src={product.imageUrl} alt="" fill sizes="512px" className="object-cover" onError={() => setImgOk(false)} />
                         </div>
                     )}
 
-                    {/* Sugar Levels */}
-                    {product.customizationOptions.sugarLevels.length > 0 && (
-                        <div className="space-y-3">
-                            <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Sugar Level</h4>
-                            <RadioGroup value={selectedSugar} onValueChange={setSelectedSugar} className="flex flex-wrap gap-2">
-                                {product.customizationOptions.sugarLevels.map((level) => (
-                                    <div key={level}>
-                                        <RadioGroupItem value={level} id={`sugar-${level}`} className="sr-only" />
-                                        <Label
-                                            htmlFor={`sugar-${level}`}
-                                            className={`px-4 py-2 rounded-full border border-border/60 text-xs font-bold transition-all cursor-pointer ${selectedSugar === level ? 'bg-primary text-primary-foreground border-primary' : 'bg-card/40'
-                                                }`}
-                                        >
-                                            {level}
-                                        </Label>
-                                    </div>
-                                ))}
-                            </RadioGroup>
+                    <div className="space-y-6 p-5">
+                        <div className="space-y-1 pr-6">
+                            <DialogTitle className="display text-2xl font-semibold">{product.name}</DialogTitle>
+                            <DialogDescription className="text-base text-muted-foreground">{product.description}</DialogDescription>
                         </div>
-                    )}
 
-                    {/* Ice Options */}
-                    {product.customizationOptions.iceOptions.length > 0 && (
-                        <div className="space-y-3">
-                            <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Ice Level</h4>
-                            <RadioGroup value={selectedIce} onValueChange={setSelectedIce} className="flex flex-wrap gap-2">
-                                {product.customizationOptions.iceOptions.map((option) => (
-                                    <div key={option}>
-                                        <RadioGroupItem value={option} id={`ice-${option}`} className="sr-only" />
-                                        <Label
-                                            htmlFor={`ice-${option}`}
-                                            className={`px-4 py-2 rounded-full border border-border/60 text-xs font-bold transition-all cursor-pointer ${selectedIce === option ? 'bg-primary text-primary-foreground border-primary' : 'bg-card/40'
-                                                }`}
-                                        >
-                                            {option}
-                                        </Label>
-                                    </div>
-                                ))}
-                            </RadioGroup>
-                        </div>
-                    )}
+                        {o.sizes.length > 0 && (
+                            <ChoiceGroup
+                                legend="Size"
+                                name="size"
+                                value={selectedSize?.label ?? ''}
+                                onChange={(v) => setSelectedSize(o.sizes.find((s) => s.label === v) || null)}
+                                options={o.sizes.map((s) => ({ value: s.label, label: s.label, hint: s.priceModifier > 0 ? `+$${s.priceModifier.toFixed(2)}` : undefined }))}
+                            />
+                        )}
+                        {o.sugarLevels.length > 0 && (
+                            <ChoiceGroup legend="Sugar" name="sugar" value={selectedSugar} onChange={setSelectedSugar} options={o.sugarLevels.map((l) => ({ value: l, label: l }))} />
+                        )}
+                        {o.iceOptions.length > 0 && (
+                            <ChoiceGroup legend="Ice" name="ice" value={selectedIce} onChange={setSelectedIce} options={o.iceOptions.map((l) => ({ value: l, label: l }))} />
+                        )}
 
-                    {/* Add-ons */}
-                    {product.customizationOptions.addOns.length > 0 && (
-                        <div className="space-y-3">
-                            <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Add-ons</h4>
-                            <div className="grid grid-cols-1 gap-2">
-                                {product.customizationOptions.addOns.map((addOn) => (
-                                    <div key={addOn.label} className="flex items-center space-x-3 rounded-lg border border-border/40 p-3 hover:bg-muted/50 transition-colors">
-                                        <Checkbox
-                                            id={`addon-${addOn.label}`}
-                                            checked={selectedAddOns.includes(addOn.label)}
-                                            onCheckedChange={(checked) => {
-                                                if (checked) setSelectedAddOns([...selectedAddOns, addOn.label]);
-                                                else setSelectedAddOns(selectedAddOns.filter(a => a !== addOn.label));
-                                            }}
-                                        />
-                                        <Label htmlFor={`addon-${addOn.label}`} className="flex-grow flex justify-between cursor-pointer">
-                                            <span>{addOn.label}</span>
-                                            <span className="text-muted-foreground">+${addOn.price.toFixed(2)}</span>
-                                        </Label>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                        {o.addOns.length > 0 && (
+                            <fieldset className="space-y-2.5">
+                                <legend className="font-medium">Add-ons</legend>
+                                <div className="divide-y rounded-2xl border bg-card">
+                                    {o.addOns.map((addOn) => {
+                                        const id = `addon-${addOn.label}`;
+                                        return (
+                                            <label key={addOn.label} htmlFor={id} className="flex min-h-12 cursor-pointer items-center gap-3 px-4">
+                                                <Checkbox
+                                                    id={id}
+                                                    checked={selectedAddOns.includes(addOn.label)}
+                                                    onCheckedChange={(checked) =>
+                                                        setSelectedAddOns(checked ? [...selectedAddOns, addOn.label] : selectedAddOns.filter((a) => a !== addOn.label))
+                                                    }
+                                                />
+                                                <span className="flex-1">{addOn.label}</span>
+                                                <span className="text-sm tabular-nums text-muted-foreground">+${addOn.price.toFixed(2)}</span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </fieldset>
+                        )}
+                    </div>
                 </div>
 
-                <DialogFooter className="flex-col sm:flex-row gap-2">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)} className="sm:flex-1 h-12">Cancel</Button>
-                    <Button onClick={handleAddToCart} className="sm:flex-1 h-12 font-bold gap-2">
-                        Add to Order — Total: ${totalPrice.toFixed(2)}
-                    </Button>
-                </DialogFooter>
+                <div className="flex items-center gap-3 border-t bg-background p-4 safe-bottom">
+                    <div className="flex items-center rounded-full border" role="group" aria-label="Quantity">
+                        <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="flex size-11 items-center justify-center rounded-full disabled:opacity-40" disabled={quantity === 1} aria-label="One less">
+                            <Minus className="size-4" aria-hidden="true" />
+                        </button>
+                        <span className="w-6 text-center tabular-nums" aria-live="polite">{quantity}</span>
+                        <button type="button" onClick={() => setQuantity((q) => q + 1)} className="flex size-11 items-center justify-center rounded-full" aria-label="One more">
+                            <Plus className="size-4" aria-hidden="true" />
+                        </button>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleAddToCart}
+                        className="flex h-12 flex-1 items-center justify-between rounded-full bg-primary px-5 font-medium text-primary-foreground transition-transform active:scale-[0.98]"
+                    >
+                        <span>Add to order</span>
+                        <span className="tabular-nums">${(unitPrice * quantity).toFixed(2)}</span>
+                    </button>
+                </div>
             </DialogContent>
         </Dialog>
     );

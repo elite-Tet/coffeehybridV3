@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CoffeeHybrid · Direction C</title>
+<meta name="description" content="Direction C: bold and motion-led, built around a live pickup board.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Big+Shoulders+Display:wght@600;800;900&display=swap" rel="stylesheet">
+<style>
+/* ── Tokens ──────────────────────────────────────────────────────────── */
+:root {
+  --color-roast: #1C130E;        /* page: dark roast, not neutral black */
+  --color-panel: #2A1D16;        /* board + cards */
+  --color-slat: #3A2A20;         /* split-flap slats */
+  --color-foam: #F4EADD;         /* text, 15:1 on roast */
+  --color-dust: #BFAE9C;         /* secondary text, 8.3:1 on roast */
+  --color-signal: #FFB224;       /* "Ready" signal lamp, 10:1 on roast */
+  --color-brewing: #E07A3F;      /* in-progress lamp */
+
+  --font-display: "Big Shoulders Display", Impact, sans-serif;
+  --font-sans: "Atkinson Hyperlegible", system-ui, sans-serif;
+
+  --text-sm: .875rem; --text-base: 1.0625rem; --text-lg: 1.25rem; --text-xl: 1.75rem;
+  --text-2xl: clamp(2.5rem, 6vw, 4.5rem); --text-hero: clamp(3.5rem, 11vw, 9.5rem);
+
+  --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem; --space-6: 1.5rem;
+  --space-8: 2rem; --space-12: 3rem; --space-16: 4rem; --space-24: 6rem;
+  --radius-sm: 4px; --radius-md: 12px; --radius-pill: 999px;
+  --gutter: clamp(1rem, 4vw, 3rem); --max: 80rem; --measure: 34rem;
+  --ease-flip: cubic-bezier(.3, 1.4, .5, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--color-roast); color: var(--color-foam); font: 400 var(--text-base)/1.6 var(--font-sans); }
+img { display: block; max-width: 100%; height: auto; }
+a { color: inherit; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 800; margin: 0; line-height: .9; letter-spacing: .005em; }
+p { margin: 0; }
+:focus-visible { outline: 3px solid var(--color-signal); outline-offset: 3px; border-radius: var(--radius-sm); }
+.skip { position: absolute; left: -999px; }
+.skip:focus { left: var(--gutter); top: var(--space-2); background: var(--color-signal); color: var(--color-roast); padding: var(--space-2) var(--space-4); z-index: 10; }
+.wrap { max-width: var(--max); margin-inline: auto; padding-inline: var(--gutter); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 var(--space-6); border-radius: var(--radius-sm); font: 800 1.375rem/1 var(--font-display); letter-spacing: .02em; text-decoration: none; border: 0; cursor: pointer; }
+.btn-primary { background: var(--color-signal); color: var(--color-roast); }
+.btn-primary:hover { background: #FFC457; }
+.btn-ghost { background: transparent; color: var(--color-foam); box-shadow: inset 0 0 0 2px var(--color-foam); }
+.btn-ghost:hover { background: rgba(244,234,221,.08); }
+
+/* SiteHeader */
+.site-header .wrap { display: flex; align-items: center; justify-content: space-between; min-height: 72px; gap: var(--space-4); }
+.wordmark { font: 900 1.75rem/1 var(--font-display); text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; letter-spacing: .01em; }
+.wordmark b { color: var(--color-signal); font-weight: 900; }
+.nav { display: none; gap: var(--space-6); }
+.nav a { text-decoration: none; color: var(--color-dust); min-height: 44px; display: inline-flex; align-items: center; }
+.nav a:hover { color: var(--color-foam); }
+.header-cta { display: none; }
+@media (min-width: 640px) { .nav, .header-cta { display: inline-flex; } }
+
+/* Hero */
+.hero { padding-block: var(--space-12) var(--space-16); }
+.hero h1 { font-size: var(--text-hero); font-weight: 900; text-transform: none; max-width: 10ch; }
+.hero-row { display: grid; gap: var(--space-12); margin-top: var(--space-8); align-items: start; }
+.hero-lede { font-size: var(--text-lg); color: var(--color-dust); max-width: var(--measure); }
+.actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-6); }
+@media (min-width: 1024px) { .hero-row { grid-template-columns: 1fr 1.25fr; } }
+
+/* The board: the one bold thing */
+.board { background: var(--color-panel); border-radius: var(--radius-md); padding: var(--space-4); box-shadow: inset 0 0 0 1px rgba(244,234,221,.06); }
+.board-head { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); padding: 0 var(--space-2) var(--space-3); }
+.board-title { font: 800 var(--text-xl)/1 var(--font-display); }
+.board-title small { display: block; font: 400 var(--text-sm)/1.4 var(--font-sans); color: var(--color-dust); margin-top: 4px; }
+.pause { min-height: 44px; min-width: 44px; padding: 0 var(--space-3); border-radius: var(--radius-sm); background: transparent; color: var(--color-dust); border: 1px solid rgba(244,234,221,.2); font: 700 var(--text-sm)/1 var(--font-sans); cursor: pointer; }
+.pause:hover { color: var(--color-foam); }
+.board table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
+.board th { text-align: left; font: 400 var(--text-sm)/1 var(--font-sans); color: var(--color-dust); padding: 0 var(--space-2) var(--space-1); }
+.board td { background: var(--color-slat); padding: var(--space-2); font: 800 clamp(1.25rem, 3.2vw, 1.75rem)/1 var(--font-display); letter-spacing: .03em; height: 3rem; vertical-align: middle; }
+.board td:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); width: 4.5rem; color: var(--color-foam); }
+.board td:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; width: 7.5rem; }
+.board .col-drink { display: none; }
+@media (min-width: 640px) { .board .col-drink { display: table-cell; } }
+.status { display: inline-flex; align-items: center; gap: 8px; }
+.status::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; box-shadow: 0 0 10px currentColor; }
+.status[data-s="Brewing"] { color: var(--color-brewing); }
+.status[data-s="Ready"] { color: var(--color-signal); }
+.flip { display: inline-block; transform-origin: 50% 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .flip.is-flipping { animation: flip .5s var(--ease-flip); }
+}
+@keyframes flip { 0% { transform: rotateX(90deg); opacity: .2; } 100% { transform: rotateX(0); opacity: 1; } }
+
+/* Sections */
+.section { padding-block: var(--space-16); }
+.section-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: var(--space-4); margin-bottom: var(--space-8); }
+.section-head h2 { font-size: var(--text-2xl); }
+.section-head p { color: var(--color-dust); max-width: var(--measure); }
+
+/* HowItWorks: steps with a scroll-linked progress line */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-8); counter-reset: s; position: relative; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 4rem 1fr; gap: var(--space-4); align-items: start; }
+.steps li::before { content: counter(s); font: 900 4rem/.8 var(--font-display); color: var(--color-signal); }
+.steps h3 { font-size: var(--text-xl); }
+.steps p { color: var(--color-dust); margin-top: var(--space-2); max-width: 30ch; }
+.progress { height: 4px; background: var(--color-slat); border-radius: 4px; overflow: hidden; margin-bottom: var(--space-8); }
+.progress span { display: block; height: 100%; width: 100%; background: var(--color-signal); transform-origin: left; }
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .progress span { animation: fill linear both; animation-timeline: view(); animation-range: entry 20% cover 55%; }
+  }
+}
+@keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (min-width: 1024px) { .steps { grid-template-columns: repeat(3, 1fr); } }
+
+/* MenuPreview: big type rows, photo on the side */
+.menu { display: grid; gap: var(--space-8); }
+@media (min-width: 1024px) { .menu { grid-template-columns: 1.4fr 1fr; align-items: start; } }
+.menu-list { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--color-slat); }
+.menu-list a { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-4); padding: var(--space-4) 0; border-bottom: 2px solid var(--color-slat); text-decoration: none; min-height: 56px; }
+.menu-list .name { font: 800 clamp(1.75rem, 4.5vw, 3rem)/1 var(--font-display); }
+.menu-list .price { font: 700 var(--text-lg)/1 var(--font-sans); color: var(--color-dust); font-variant-numeric: tabular-nums; }
+.menu-list a:hover .name { color: var(--color-signal); }
+.menu-photo { border-radius: var(--radius-md); overflow: hidden; }
+.menu-photo img { width: 100%; aspect-ratio: 4/5; object-fit: cover; }
+
+/* PickupPolicy */
+.policy { display: grid; gap: var(--space-8); border: 2px solid var(--color-signal); border-radius: var(--radius-md); padding: var(--space-8) var(--space-6); }
+@media (min-width: 640px) { .policy { padding: var(--space-12); } }
+@media (min-width: 1024px) { .policy { grid-template-columns: auto 1fr; align-items: center; gap: var(--space-16); } }
+.big-number { font: 900 clamp(6rem, 18vw, 12rem)/.8 var(--font-display); color: var(--color-signal); }
+.big-number small { display: block; font: 800 var(--text-xl)/1 var(--font-display); color: var(--color-foam); margin-top: var(--space-2); }
+.policy-copy { display: grid; gap: var(--space-4); max-width: var(--measure); color: var(--color-dust); }
+.policy-copy h2 { font-size: var(--text-xl); color: var(--color-foam); }
+
+/* ClosingCta */
+.closing { padding-block: var(--space-24); }
+.closing h2 { font-size: var(--text-hero); font-weight: 900; max-width: 12ch; }
+
+/* SiteFooter */
+.site-footer { border-top: 2px solid var(--color-slat); padding-block: var(--space-12); color: var(--color-dust); font-size: var(--text-sm); }
+.footer-grid { display: grid; gap: var(--space-8); }
+@media (min-width: 640px) { .footer-grid { grid-template-columns: 2fr 1fr 1fr; } }
+.footer-grid ul { list-style: none; margin: 0; padding: 0; }
+.footer-grid a { text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
+.footer-grid a:hover { color: var(--color-foam); text-decoration: underline; }
+
+/* BottomTabBar */
+.tabbar { position: fixed; inset: auto 0 0; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--color-panel); padding-bottom: env(safe-area-inset-bottom); z-index: 5; }
+.tabbar a { min-height: 60px; display: grid; place-items: center; text-decoration: none; font: 800 1.125rem/1 var(--font-display); letter-spacing: .03em; color: var(--color-dust); }
+.tabbar a[aria-current="page"] { color: var(--color-signal); }
+body { padding-bottom: 68px; }
+@media (min-width: 640px) { .tabbar { display: none; } body { padding-bottom: 0; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="wordmark" href="#">Coffee<b>Hybrid</b></a>
+    <nav class="nav" aria-label="Main"><a href="#menu">Menu</a><a href="#how">How pickup works</a><a href="#">Your orders</a><a href="#">Sign in</a></nav>
+    <a class="btn btn-primary header-cta" href="#">Start an order</a>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap">
+      <h1 id="hero-title">Order now. Pick up when it says Ready.</h1>
+      <div class="hero-row">
+        <div>
+          <p class="hero-lede">Your order goes straight to the bar. Watch your code move up the board, then show it at the counter.</p>
+          <div class="actions"><a class="btn btn-primary" href="#">Start an order</a><a class="btn btn-ghost" href="#menu">See the menu</a></div>
+        </div>
+        <div class="board">
+          <div class="board-head">
+            <p class="board-title">Pickup board<small>Example of what the counter screen shows</small></p>
+            <button class="pause" type="button" aria-pressed="false" id="pause">Pause</button>
+          </div>
+          <table>
+            <caption style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">Example pickup board with order codes and their status</caption>
+            <thead><tr><th scope="col">Code</th><th scope="col">Name</th><th scope="col" class="col-drink">Drink</th><th scope="col">Status</th></tr></thead>
+            <tbody id="board-rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <div class="section-head"><h2 id="how-title">How pickup works</h2><p>About a minute on your phone, zero minutes in line.</p></div>
+      <div class="progress" aria-hidden="true"><span></span></div>
+      <ol class="steps">
+        <li><div><h3>Choose your drink</h3><p>Pick a size, milk and sugar. Your total updates as you go.</p></div></li>
+        <li><div><h3>Get your code</h3><p>A short code and QR ticket land on your phone. The bar starts brewing.</p></div></li>
+        <li><div><h3>Show it when it’s Ready</h3><p>The barista scans your ticket and your drink is yours.</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section" id="menu" aria-labelledby="menu-title">
+    <div class="wrap">
+      <div class="section-head"><h2 id="menu-title">On the bar today</h2><a class="btn btn-ghost" href="#">Full menu</a></div>
+      <div class="menu">
+        <ul class="menu-list">
+          <li><a href="#"><span class="name">Nitro Cold Brew</span><span class="price">$5.45</span></a></li>
+          <li><a href="#"><span class="name">Iced Latte</span><span class="price">$4.75</span></a></li>
+          <li><a href="#"><span class="name">Strawberry Açaí</span><span class="price">$4.95</span></a></li>
+          <li><a href="#"><span class="name">Cappuccino</span><span class="price">$4.25</span></a></li>
+          <li><a href="#"><span class="name">Americano</span><span class="price">$3.75</span></a></li>
+          <li><a href="#"><span class="name">Espresso</span><span class="price">$3.50</span></a></li>
+        </ul>
+        <div class="menu-photo"><img src="https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=800&h=1000&fit=crop" alt="Iced coffee with milk swirling into espresso." width="400" height="500"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="policy-title">
+    <div class="wrap">
+      <div class="policy">
+        <p class="big-number" aria-hidden="true">30<small>minutes</small></p>
+        <div class="policy-copy">
+          <h2 id="policy-title">We hold every order for 30 minutes</h2>
+          <p>Your drink is made when you order. After 30 minutes it expires, so nothing sits going cold.</p>
+          <p>An expired order counts as a missed pickup. Miss three and ordering pauses for 24 hours.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="closing" aria-labelledby="closing-title">
+    <div class="wrap">
+      <h2 id="closing-title">Your code could be next.</h2>
+      <div class="actions"><a class="btn btn-primary" href="#">Start an order</a></div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div><p class="wordmark" style="color:var(--color-foam)">Coffee<b>Hybrid</b></p><p style="margin-top:var(--space-2)">Open daily, 7:00 to 19:00.</p></div>
+    <ul aria-label="Order"><li><a href="#menu">Menu</a></li><li><a href="#">Your orders</a></li><li><a href="#">Sign in</a></li></ul>
+    <ul aria-label="About"><li><a href="#how">How pickup works</a></li><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li></ul>
+  </div>
+</footer>
+
+<nav class="tabbar" aria-label="Quick"><a href="#menu" aria-current="page">Menu</a><a href="#">Orders</a><a href="#">Cart</a><a href="#">Account</a></nav>
+
+<script>
+(function () {
+  const names = ['Dara', 'Sophea', 'Visal', 'Mony', 'Rithy', 'Lina', 'Bopha', 'Kosal', 'Chenda', 'Piseth'];
+  const drinks = ['Iced Latte', 'Cappuccino', 'Nitro', 'Americano', 'Espresso', 'Açaí'];
+  let n = 24;
+  const mk = (s) => ({ code: 'A' + (n++), name: names[n % names.length], drink: drinks[n % drinks.length], s });
+  let rows = [mk('Ready'), mk('Ready'), mk('Brewing'), mk('Brewing'), mk('Brewing')];
+  const tbody = document.getElementById('board-rows');
+  const cell = (t) => `<span class="flip">${t}</span>`;
+  function render(changed) {
+    tbody.innerHTML = rows.map((r, i) => `<tr><td>${cell(r.code)}</td><td>${cell(r.name)}</td><td class="col-drink">${cell(r.drink)}</td><td><span class="flip status" data-s="${r.s}">${r.s}</span></td></tr>`).join('');
+    if (changed != null) tbody.rows[changed].querySelectorAll('.flip').forEach(el => el.classList.add('is-flipping'));
+  }
+  function tick() {
+    const i = rows.findIndex(r => r.s === 'Brewing');
+    if (i > -1) { rows[i].s = 'Ready'; render(i); }
+    if (rows.filter(r => r.s === 'Ready').length > 3) { rows.shift(); rows.push(mk('Brewing')); render(rows.length - 1); }
+  }
+  render();
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const btn = document.getElementById('pause');
+  let timer = null;
+  const start = () => { timer = setInterval(tick, 2400); btn.textContent = 'Pause'; btn.setAttribute('aria-pressed', 'false'); };
+  const stop = () => { clearInterval(timer); timer = null; btn.textContent = 'Play'; btn.setAttribute('aria-pressed', 'true'); };
+  btn.addEventListener('click', () => (timer ? stop() : start()));
+  reduce ? stop() : start();
+})();
+</script>
+</body>
+</html>

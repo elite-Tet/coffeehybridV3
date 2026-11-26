@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CoffeeHybrid · Direction A</title>
+<meta name="description" content="Direction A: editorial minimal. Order ahead, pick up at the counter.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* ── Tokens (map 1:1 to globals.css @theme) ───────────────────────────── */
+:root {
+  --color-paper: #F4F5F2;       /* porcelain, cool white */
+  --color-ink: #1D1A17;         /* espresso ink */
+  --color-graphite: #5C5650;    /* secondary text, 6.6:1 on paper */
+  --color-crema: #8F5F17;       /* accent, 5.6:1 on paper */
+  --color-rule: #D6D7D0;
+  --color-surface: #FFFFFF;
+
+  --font-display: "Instrument Serif", Georgia, serif;
+  --font-sans: "Instrument Sans", system-ui, sans-serif;
+
+  /* modular scale 1.25 from 17px */
+  --text-sm: 0.875rem;
+  --text-base: 1.0625rem;
+  --text-lg: 1.328rem;
+  --text-xl: 1.66rem;
+  --text-2xl: 2.6rem;
+  --text-hero: clamp(3.25rem, 9vw, 8.5rem);
+
+  --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem;
+  --space-6: 1.5rem; --space-8: 2rem; --space-12: 3rem; --space-16: 4rem; --space-24: 6rem;
+  --radius-sm: 2px; --radius-pill: 999px;
+  --measure: 34rem;
+  --gutter: clamp(1rem, 4vw, 3rem);
+  --max: 76rem;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--color-paper); color: var(--color-ink);
+  font: 400 var(--text-base)/1.55 var(--font-sans);
+  text-rendering: optimizeLegibility;
+}
+img { display: block; max-width: 100%; height: auto; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--color-crema); outline-offset: 3px; border-radius: var(--radius-sm); }
+.skip { position: absolute; left: -999px; top: 0; }
+.skip:focus { left: var(--gutter); top: var(--space-2); background: var(--color-ink); color: var(--color-paper); padding: var(--space-2) var(--space-4); z-index: 10; }
+.wrap { max-width: var(--max); margin-inline: auto; padding-inline: var(--gutter); }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.01em; margin: 0; }
+p { margin: 0; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 48px;
+  padding: 0 var(--space-6); border-radius: var(--radius-pill);
+  font: 500 var(--text-base)/1 var(--font-sans); text-decoration: none;
+}
+.btn-primary { background: var(--color-ink); color: var(--color-paper); }
+.btn-primary:hover { background: #3a332d; }
+.link { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; min-height: 48px; display: inline-flex; align-items: center; }
+.link:hover { color: var(--color-crema); }
+
+/* ── SiteHeader ──────────────────────────────────────────────────────── */
+.site-header { border-bottom: 1px solid var(--color-rule); }
+.site-header .wrap { display: flex; align-items: center; justify-content: space-between; min-height: 64px; gap: var(--space-4); }
+.wordmark { font: 400 1.5rem/1 var(--font-display); text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
+.nav { display: none; gap: var(--space-6); }
+.nav a { text-decoration: none; color: var(--color-graphite); min-height: 44px; display: inline-flex; align-items: center; }
+.nav a:hover { color: var(--color-ink); }
+.header-cta { display: none; }
+@media (min-width: 640px) { .nav, .header-cta { display: inline-flex; } }
+
+/* ── Hero ────────────────────────────────────────────────────────────── */
+.hero { padding-block: var(--space-16) var(--space-12); }
+.hero-grid { display: grid; gap: var(--space-12); }
+.hero h1 { font-size: var(--text-hero); line-height: .92; max-width: 11ch; }
+.hero-lede { font-size: var(--text-lg); color: var(--color-graphite); max-width: var(--measure); margin-top: var(--space-8); }
+.hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-6); margin-top: var(--space-8); }
+.hero-figure { margin: 0; }
+.hero-figure img { width: 100%; aspect-ratio: 4/5; object-fit: cover; filter: grayscale(.15) contrast(1.02); }
+.hero-figure figcaption { font-size: var(--text-sm); color: var(--color-graphite); margin-top: var(--space-2); }
+@media (min-width: 1024px) {
+  .hero-grid { grid-template-columns: 1fr 20rem; align-items: end; }
+}
+
+/* ── Sections ────────────────────────────────────────────────────────── */
+.section { padding-block: var(--space-16); border-top: 1px solid var(--color-rule); }
+.section-head { display: grid; gap: var(--space-4); margin-bottom: var(--space-12); }
+.section-head h2 { font-size: var(--text-2xl); line-height: 1.05; }
+.section-head p { color: var(--color-graphite); max-width: var(--measure); }
+@media (min-width: 1024px) { .section-head { grid-template-columns: 20rem 1fr; align-items: baseline; } }
+
+/* HowItWorks: a real sequence, so numerals are earned */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-12); counter-reset: step; }
+.steps li { counter-increment: step; display: grid; grid-template-columns: 3.5rem 1fr; gap: var(--space-4); }
+.steps li::before { content: counter(step); font: 400 3.5rem/0.8 var(--font-display); color: var(--color-crema); }
+.steps h3 { font: 600 var(--text-base)/1.3 var(--font-sans); margin-bottom: var(--space-2); }
+.steps p { color: var(--color-graphite); max-width: 28ch; }
+@media (min-width: 1024px) { .steps { grid-template-columns: repeat(3, 1fr); } }
+
+/* MenuPreview: a printed price list with dot leaders */
+.menu-cols { display: grid; gap: var(--space-12); }
+@media (min-width: 1024px) { .menu-cols { grid-template-columns: 1fr 1fr; gap: var(--space-16); } }
+.menu-group h3 { font-size: var(--text-xl); font-style: italic; margin-bottom: var(--space-4); }
+.price-list { list-style: none; margin: 0; padding: 0; }
+.price-list li { padding-block: var(--space-4); }
+.price-list li + li { border-top: 1px solid var(--color-rule); }
+.item-line { display: flex; align-items: baseline; gap: var(--space-2); }
+.item-name { font: 400 var(--text-lg)/1.2 var(--font-display); }
+.leader { flex: 1; border-bottom: 1px dotted var(--color-graphite); transform: translateY(-.3em); min-width: var(--space-6); }
+.item-price { font-variant-numeric: tabular-nums; font-weight: 500; }
+.item-desc { color: var(--color-graphite); font-size: var(--text-sm); margin-top: var(--space-1); }
+.menu-foot { margin-top: var(--space-8); }
+
+/* PickupPolicy */
+.policy { display: grid; gap: var(--space-8); }
+.policy-statement { font: 400 var(--text-2xl)/1.1 var(--font-display); max-width: 18ch; }
+.policy-details { display: grid; gap: var(--space-6); max-width: var(--measure); }
+.policy-details h3 { font: 600 var(--text-base)/1.3 var(--font-sans); margin-bottom: var(--space-1); }
+.policy-details p { color: var(--color-graphite); }
+@media (min-width: 1024px) { .policy { grid-template-columns: 1fr 1fr; } }
+
+/* ClosingCta */
+.closing { padding-block: var(--space-24); border-top: 1px solid var(--color-rule); text-align: left; }
+.closing h2 { font-size: clamp(2.5rem, 6vw, 5rem); line-height: 1; max-width: 14ch; }
+.closing .hero-actions { margin-top: var(--space-8); }
+
+/* SiteFooter */
+.site-footer { border-top: 1px solid var(--color-ink); padding-block: var(--space-12) var(--space-16); font-size: var(--text-sm); color: var(--color-graphite); }
+.footer-grid { display: grid; gap: var(--space-8); }
+.footer-grid ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-1); }
+.footer-grid a { text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
+.footer-grid a:hover { color: var(--color-ink); text-decoration: underline; }
+@media (min-width: 640px) { .footer-grid { grid-template-columns: 2fr 1fr 1fr; } }
+
+/* BottomTabBar (mobile) */
+.tabbar { position: fixed; inset: auto 0 0 0; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--color-paper); border-top: 1px solid var(--color-rule); padding-bottom: env(safe-area-inset-bottom); z-index: 5; }
+.tabbar a { min-height: 56px; display: grid; place-items: center; text-decoration: none; font-size: var(--text-sm); color: var(--color-graphite); }
+.tabbar a[aria-current="page"] { color: var(--color-ink); font-weight: 600; }
+body { padding-bottom: 64px; }
+@media (min-width: 640px) { .tabbar { display: none; } body { padding-bottom: 0; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="wordmark" href="#">CoffeeHybrid</a>
+    <nav class="nav" aria-label="Main">
+      <a href="#menu">Menu</a>
+      <a href="#how">How pickup works</a>
+      <a href="#">Your orders</a>
+      <a href="#">Sign in</a>
+    </nav>
+    <a class="btn btn-primary header-cta" href="#">Start an order</a>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap hero-grid">
+      <div>
+        <h1 id="hero-title">Your coffee, ready when you walk in.</h1>
+        <p class="hero-lede">Order on your phone and we start brewing straight away. Show your pickup code at the counter and you’re on your way.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#">Start an order</a>
+          <a class="link" href="#menu">See the menu</a>
+        </div>
+      </div>
+      <figure class="hero-figure">
+        <img src="https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=800&h=1000&fit=crop" width="400" height="500" alt="Iced coffee in a glass, with milk swirling into the espresso.">
+        <figcaption>Iced Latte, $4.75</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section" id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="how-title">How pickup works</h2>
+        <p>Three steps, about a minute on your phone.</p>
+      </div>
+      <ol class="steps">
+        <li><div><h3>Choose your drink</h3><p>Pick a size, milk and sugar level. Your total updates as you go.</p></div></li>
+        <li><div><h3>Get your pickup code</h3><p>You receive a short code and a QR ticket. We start making your drink right away.</p></div></li>
+        <li><div><h3>Show it at the counter</h3><p>The barista scans your code and hands over your drink. No queue, no name shouting.</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section" id="menu" aria-labelledby="menu-title">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="menu-title">On the menu today</h2>
+        <p>Prices for a tall. Grande adds $0.75, venti adds $1.25.</p>
+      </div>
+      <div class="menu-cols">
+        <div class="menu-group">
+          <h3>Hot</h3>
+          <ul class="price-list">
+            <li><div class="item-line"><span class="item-name">Espresso</span><span class="leader" aria-hidden="true"></span><span class="item-price">$3.50</span></div><p class="item-desc">A double shot, pulled short.</p></li>
+            <li><div class="item-line"><span class="item-name">Americano</span><span class="leader" aria-hidden="true"></span><span class="item-price">$3.75</span></div><p class="item-desc">Espresso lengthened with hot water.</p></li>
+            <li><div class="item-line"><span class="item-name">Cappuccino</span><span class="leader" aria-hidden="true"></span><span class="item-price">$4.25</span></div><p class="item-desc">Espresso, steamed milk, thick foam.</p></li>
+          </ul>
+        </div>
+        <div class="menu-group">
+          <h3>Cold</h3>
+          <ul class="price-list">
+            <li><div class="item-line"><span class="item-name">Iced Latte</span><span class="leader" aria-hidden="true"></span><span class="item-price">$4.75</span></div><p class="item-desc">Espresso and cold milk over ice.</p></li>
+            <li><div class="item-line"><span class="item-name">Strawberry Açaí Refresher</span><span class="leader" aria-hidden="true"></span><span class="item-price">$4.95</span></div><p class="item-desc">Fruit, green coffee extract, ice.</p></li>
+            <li><div class="item-line"><span class="item-name">Nitro Cold Brew</span><span class="leader" aria-hidden="true"></span><span class="item-price">$5.45</span></div><p class="item-desc">Steeped overnight, poured on nitro.</p></li>
+          </ul>
+        </div>
+      </div>
+      <p class="menu-foot"><a class="link" href="#">See the full menu</a></p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="policy-title">
+    <div class="wrap policy">
+      <h2 id="policy-title" class="policy-statement">We hold every order for 30 minutes.</h2>
+      <div class="policy-details">
+        <div><h3>Why there’s a time limit</h3><p>Your drink is made the moment you order. After 30 minutes it’s no longer the drink you paid for, so the order expires.</p></div>
+        <div><h3>Missed pickups</h3><p>An expired order counts as a missed pickup. Miss three and ordering pauses for 24 hours. You can still browse the menu while it’s paused.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="closing" aria-labelledby="closing-title">
+    <div class="wrap">
+      <h2 id="closing-title">Your next coffee is a minute away.</h2>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#">Start an order</a>
+        <a class="link" href="#">Sign in</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div><p class="wordmark" style="color:var(--color-ink)">CoffeeHybrid</p><p style="margin-top:var(--space-2)">Open daily, 7:00 to 19:00.</p></div>
+    <ul aria-label="Order"><li><a href="#menu">Menu</a></li><li><a href="#">Your orders</a></li><li><a href="#">Sign in</a></li></ul>
+    <ul aria-label="About"><li><a href="#how">How pickup works</a></li><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li></ul>
+  </div>
+</footer>
+
+<nav class="tabbar" aria-label="Quick">
+  <a href="#menu" aria-current="page">Menu</a><a href="#">Orders</a><a href="#">Cart</a><a href="#">Account</a>
+</nav>
+</body>
+</html>

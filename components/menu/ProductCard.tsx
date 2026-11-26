@@ -1,66 +1,65 @@
 'use client';
 
 import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { Plus } from 'lucide-react';
+import { useState } from 'react';
+import { Coffee, Plus } from 'lucide-react';
 import { IProduct } from '@/types';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 interface ProductCardProps {
     product: IProduct;
-    onAdd: (product: IProduct) => void;
+    onOpen: (product: IProduct) => void;
+    onQuickAdd: (product: IProduct) => void;
 }
 
-export default function ProductCard({ product, onAdd }: ProductCardProps) {
+/** Whole card opens the customize sheet; the round + adds it with default options. */
+export default function ProductCard({ product, onOpen, onQuickAdd }: ProductCardProps) {
+    const soldOut = !product.isAvailable;
+    const [broken, setBroken] = useState(!product.imageUrl);
+
     return (
-        <motion.div
-            whileHover={{ y: -5 }}
-            transition={{ type: 'spring', stiffness: 300 }}
-            className="h-full"
-        >
-            <Card className="overflow-hidden border-border/40 bg-card/60 backdrop-blur-sm h-full flex flex-col group hover:shadow-lg transition-all duration-300">
-                <div className="relative h-48 sm:h-56 w-full overflow-hidden">
+        <article className="group relative flex flex-col">
+            <button
+                type="button"
+                onClick={() => onOpen(product)}
+                disabled={soldOut}
+                className="flex flex-col text-left disabled:cursor-not-allowed"
+                aria-label={soldOut ? `${product.name}, sold out` : `Customize ${product.name}`}
+            >
+                <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-muted">
+                    {broken ? (
+                        <span className="flex h-full items-center justify-center text-muted-foreground/50"><Coffee className="size-10" aria-hidden="true" /></span>
+                    ) : (
                     <Image
+                        onError={() => setBroken(true)}
                         src={product.imageUrl}
-                        alt={product.name}
+                        alt=""
                         fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        sizes="(min-width: 1024px) 25vw, 50vw"
+                        className={cn('object-cover transition-transform duration-500', !soldOut && 'group-hover:scale-[1.03]', soldOut && 'grayscale opacity-60')}
                     />
-                    {!product.isAvailable && (
-                        <div className="absolute inset-0 bg-background/80 backdrop-blur-[2px] flex items-center justify-center p-4 text-center z-10">
-                            <Badge variant="destructive" className="text-sm font-bold shadow-sm">Sold Out</Badge>
-                        </div>
+                    )}
+                    {soldOut && (
+                        <span className="absolute left-3 top-3 rounded-full bg-background px-2.5 py-1 text-sm font-medium">Sold out</span>
                     )}
                 </div>
-                
-                <CardHeader className="p-4 flex-grow space-y-2">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1">
-                        <CardTitle className="text-base sm:text-lg font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2">
-                            {product.name}
-                        </CardTitle>
-                        <span className="text-primary font-bold text-base sm:text-lg shrink-0">
-                            ${product.basePrice.toFixed(2)}
-                        </span>
-                    </div>
-                    <CardDescription className="line-clamp-2 text-xs sm:text-sm text-muted-foreground/80">
-                        {product.description}
-                    </CardDescription>
-                </CardHeader>
+                <div className="mt-3 space-y-0.5 pr-12">
+                    <h3 className="font-medium leading-snug">{product.name}</h3>
+                    <p className="line-clamp-1 text-sm text-muted-foreground">{product.description}</p>
+                    <p className="pt-1 text-sm font-medium tabular-nums text-roast">${product.basePrice.toFixed(2)}</p>
+                </div>
+            </button>
 
-                <CardFooter className="p-4 pt-0 mt-auto">
-                    <Button
-                        onClick={() => onAdd(product)}
-                        disabled={!product.isAvailable}
-                        className="w-full h-10 sm:h-11 gap-2 font-medium shadow-sm active:scale-95 transition-all hover:shadow-md"
-                        size="sm"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Customize
-                    </Button>
-                </CardFooter>
-            </Card>
-        </motion.div>
+            {!soldOut && (
+                <button
+                    type="button"
+                    onClick={() => onQuickAdd(product)}
+                    className="absolute bottom-1 right-0 flex size-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-transform active:scale-95"
+                    aria-label={`Add ${product.name} with default options`}
+                >
+                    <Plus className="size-5" aria-hidden="true" />
+                </button>
+            )}
+        </article>
     );
 }

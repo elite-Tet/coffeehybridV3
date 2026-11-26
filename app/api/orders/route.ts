@@ -110,7 +110,7 @@ export const GET = async () => {
         await dbConnect();
         const dbUser = await User.findOne({ email: session.user.email });
 
-        const orders = await Order.find({ user: dbUser?._id }).sort({ createdAt: -1 });
+        const orders = await Order.find({ user: dbUser?._id }).sort({ createdAt: -1 }).populate('items.product', 'name imageUrl basePrice isAvailable customizationOptions');
         return NextResponse.json({ success: true, data: orders });
     } catch (error: unknown) {
         return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });

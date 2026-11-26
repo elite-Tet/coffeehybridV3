@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Fraunces, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/shared/Navbar";
-import Footer from "@/components/shared/Footer";
 import NextAuthProvider from "@/components/providers/NextAuthProvider";
+import ThemeProvider from "@/components/providers/ThemeProvider";
+import SiteChrome from "@/components/shared/SiteChrome";
 import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
@@ -16,9 +16,26 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  axes: ["SOFT", "WONK", "opsz"],
+});
+
 export const metadata: Metadata = {
-  title: "CoffeeHybrid v2 — Smart Coffee Ordering",
-  description: "Order ahead, skip the queue, and enjoy premium coffee.",
+  title: "CoffeeHybrid — order ahead, pick up fresh",
+  description: "Order your coffee on your phone, show your pickup code at the counter, and skip the line.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#faf6ef" },
+    { media: "(prefers-color-scheme: dark)", color: "#17100b" },
+  ],
 };
 
 export default function RootLayout({
@@ -27,20 +44,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased selection:bg-primary selection:text-primary-foreground`}
+        className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} antialiased`}
       >
-        <NextAuthProvider>
-          <div className="min-h-screen flex flex-col">
-            <Navbar />
-            <main className="flex-grow">
-              {children}
-            </main>
-            <Footer />
-            <Toaster position="top-center" expand={true} richColors />
-          </div>
-        </NextAuthProvider>
+        <ThemeProvider>
+          <NextAuthProvider>
+            <SiteChrome>{children}</SiteChrome>
+            <Toaster position="top-center" richColors />
+          </NextAuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

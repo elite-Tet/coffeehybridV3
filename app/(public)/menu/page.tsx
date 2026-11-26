@@ -1,18 +1,27 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { Search } from 'lucide-react';
+import { toast } from 'sonner';
 import { IProduct, ICategory } from '@/types';
 import CategoryTabs from '@/components/menu/CategoryTabs';
 import ProductCard from '@/components/menu/ProductCard';
 import ProductModal from '@/components/menu/ProductModal';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Search, Coffee } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { useCartStore } from '@/store/cart.store';
+
+function greeting() {
+    const h = new Date().getHours();
+    return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+}
 
 export default function MenuPage() {
+    const { data: session } = useSession();
+    const addItem = useCartStore((s) => s.addItem);
     const [products, setProducts] = useState<IProduct[]>([]);
     const [categories, setCategories] = useState<ICategory[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -24,30 +33,20 @@ export default function MenuPage() {
             setLoading(true);
             try {
                 const [productsRes, categoriesRes] = await Promise.all([
-                    fetch('/api/products').then(async res => {
+                    fetch('/api/products').then(async (res) => {
                         if (!res.ok) throw new Error(`Products fetch failed: ${res.status}`);
                         return res.json();
                     }),
-                    fetch('/api/categories').then(async res => {
+                    fetch('/api/categories').then(async (res) => {
                         if (!res.ok) throw new Error(`Categories fetch failed: ${res.status}`);
                         return res.json();
-                    })
+                    }),
                 ]);
-
-                if (productsRes.success) {
-                    setProducts(productsRes.data);
-                } else {
-                    console.error('Products API returned unsuccessful response:', productsRes);
-                }
-
-                if (categoriesRes.success) {
-                    setCategories(categoriesRes.data);
-                } else {
-                    console.error('Categories API returned unsuccessful response:', categoriesRes);
-                }
+                if (productsRes.success) setProducts(productsRes.data);
+                if (categoriesRes.success) setCategories(categoriesRes.data);
             } catch (error) {
-                console.error("Error fetching data", error);
-                // Can set UI error state here if needed
+                console.error('Error fetching data', error);
+                setLoadError(true);
             } finally {
                 setLoading(false);
             }
@@ -55,86 +54,97 @@ export default function MenuPage() {
         fetchData();
     }, []);
 
-    const filteredProducts = products.filter(product => {
-        const matchesCategory = activeCategory === null || product.category === activeCategory ||
+    const filteredProducts = products.filter((product) => {
+        const matchesCategory =
+            activeCategory === null ||
+            product.category === activeCategory ||
             (typeof product.category === 'object' && (product.category as ICategory)._id === activeCategory);
-        const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            product.description.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch && product.isAvailable;
+        const q = searchQuery.toLowerCase();
+        const matchesSearch = product.name.toLowerCase().includes(q) || product.description.toLowerCase().includes(q);
+        return matchesCategory && matchesSearch;
     });
+    // Available drinks first, sold-out ones stay visible at the end so people know they exist.
+    filteredProducts.sort((a, b) => Number(b.isAvailable) - Number(a.isAvailable));
 
-    const categoriesList = categories.filter(c => c.isActive);
+    const openProduct = (p: IProduct) => {
+        setSelectedProduct(p);
+        setIsModalOpen(true);
+    };
+
+    const quickAdd = (p: IProduct) => {
+        const o = p.customizationOptions;
+        const size = o.sizes[0];
+        addItem(p, { size: size?.label, sugarLevel: o.sugarLevels[0], iceOption: o.iceOptions[0], addOns: [] }, p.basePrice + (size?.priceModifier ?? 0));
+        toast.success(`${p.name} added`, {
+            description: [size?.label, o.sugarLevels[0] && `${o.sugarLevels[0]} sugar`].filter(Boolean).join(', '),
+            action: { label: 'Customize', onClick: () => openProduct(p) },
+        });
+    };
+
+    const firstName = session?.user?.name?.split(' ')[0];
 
     return (
-        <div className="min-h-screen bg-background pb-20 pt-10">
-            <div className="container px-4 mx-auto max-w-6xl">
-                {/* Header */}
-                <div className="flex flex-col items-center mb-10 text-center space-y-4">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="p-3 bg-primary/10 rounded-2xl text-primary"
-                    >
-                        <Coffee className="w-8 h-8" />
-                    </motion.div>
-                    <h1 className="text-4xl font-bold tracking-tight">Our Menu</h1>
-                    <p className="text-muted-foreground max-w-lg">From classic espresso to artisanal blends, discover your next favorite cup.</p>
+        <div className="mx-auto max-w-6xl px-4 pt-6 md:px-6 md:pt-10">
+            <header className="space-y-1">
+                <p className="text-muted-foreground">{firstName ? `${greeting()}, ${firstName}` : greeting()}</p>
+                <h1 className="display text-4xl font-semibold md:text-5xl">What are you drinking?</h1>
+            </header>
+
+            <div className="sticky top-14 z-20 -mx-4 mt-6 space-y-3 border-b bg-background/95 px-4 py-3 backdrop-blur-sm md:top-16 md:mx-0 md:flex md:items-center md:gap-4 md:space-y-0 md:border-0 md:px-0">
+                <div role="search" className="relative block md:order-2 md:ml-auto md:w-72">
+                    <label htmlFor="menu-search" className="sr-only">Search the menu</label>
+                    <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                    <input
+                        id="menu-search"
+                        type="search"
+                        placeholder="Search drinks"
+                        autoComplete="off"
+                        spellCheck={false}
+                        enterKeyHint="search"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="h-11 w-full rounded-full border border-input bg-card pl-10 pr-4 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
                 </div>
-
-                {/* Filters */}
-                <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md pb-4 pt-2 -mx-4 px-4 border-b border-border/20 mb-8">
-                    <div className="max-w-xl mx-auto space-y-4">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search our drinks..."
-                                className="pl-10 h-12 bg-card/40 border-border/60 rounded-xl"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </div>
-                        <CategoryTabs
-                            categories={categoriesList}
-                            activeCategory={activeCategory}
-                            onSelect={setActiveCategory}
-                        />
-                    </div>
-                </div>
-
-                {/* Product Grid */}
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4">
-                        <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                        <p className="text-muted-foreground animate-pulse font-medium">Brewing the menu...</p>
-                    </div>
-                ) : (
-                    <motion.div
-                        layout
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-                    >
-                        <AnimatePresence mode="popLayout">
-                            {filteredProducts.map((product) => (
-                                <ProductCard
-                                    key={product._id as string}
-                                    product={product}
-                                    onAdd={(p) => {
-                                        setSelectedProduct(p);
-                                        setIsModalOpen(true);
-                                    }}
-                                />
-                            ))}
-                        </AnimatePresence>
-                    </motion.div>
-                )}
-
-                {!loading && filteredProducts.length === 0 && (
-                    <div className="text-center py-20 bg-card/20 rounded-3xl border border-dashed border-border/40">
-                        <p className="text-xl font-medium text-muted-foreground">No matches found. Try another selection!</p>
-                    </div>
-                )}
+                <CategoryTabs categories={categories.filter((c) => c.isActive)} activeCategory={activeCategory} onSelect={setActiveCategory} />
             </div>
 
-            {/* Customization Modal */}
+            {loading ? (
+                <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4" aria-label="Loading menu">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <li key={i} className="space-y-3">
+                            <div className="aspect-[4/5] animate-pulse rounded-2xl bg-muted" />
+                            <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                            <div className="h-3 w-1/3 animate-pulse rounded bg-muted" />
+                        </li>
+                    ))}
+                </ul>
+            ) : loadError ? (
+                <div className="mt-10 rounded-2xl border bg-card p-8 text-center">
+                    <h2 className="text-lg font-medium">The menu didn’t load</h2>
+                    <p className="mt-1 text-muted-foreground">Check your connection, then try again.</p>
+                    <button type="button" onClick={() => location.reload()} className="mt-4 rounded-full bg-primary px-5 py-2.5 text-primary-foreground">
+                        Try again
+                    </button>
+                </div>
+            ) : filteredProducts.length === 0 ? (
+                <div className="mt-10 rounded-2xl border border-dashed p-10 text-center">
+                    <h2 className="text-lg font-medium">No drinks match “{searchQuery}”</h2>
+                    <p className="mt-1 text-muted-foreground">Try another word, or pick a different category.</p>
+                    <button type="button" onClick={() => { setSearchQuery(''); setActiveCategory(null); }} className="mt-4 text-sm font-medium text-roast underline underline-offset-4">
+                        Clear search
+                    </button>
+                </div>
+            ) : (
+                <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">
+                    {filteredProducts.map((product) => (
+                        <li key={product._id as string}>
+                            <ProductCard product={product} onOpen={openProduct} onQuickAdd={quickAdd} />
+                        </li>
+                    ))}
+                </ul>
+            )}
+
             <ProductModal
                 key={selectedProduct?._id?.toString() || 'none'}
                 product={selectedProduct}
