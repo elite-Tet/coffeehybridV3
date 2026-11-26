@@ -233,7 +233,7 @@ export default function CategoryManagement() {
                             />
                             <span className="font-bold">Show on the menu</span>
                         </label>
-                        <DialogFooter className="gap-3 pt-2 sm:gap-3">
+                        <DialogFooter className="-mx-6 -mb-6 mt-2 gap-3 bg-slat/40 p-6 sm:gap-3">
                             <button type="button" onClick={() => setIsDialogOpen(false)} className={cn(boardButtonGhost, 'flex-1')}>Cancel</button>
                             <button type="submit" className={cn(boardButtonPrimary, 'flex-1')}>
                                 {editingCategory ? 'Save changes' : 'Create category'}
