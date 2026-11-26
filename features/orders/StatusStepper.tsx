@@ -20,8 +20,8 @@ export default function StatusStepper({ status }: { status: OrderStatus }) {
                 const active = i === current && status !== 'completed';
                 return (
                     <li key={step.key} aria-current={active ? 'step' : undefined} className="space-y-2">
-                        <div className={cn('h-1.5 rounded-full', done ? 'bg-foreground' : active ? (status === 'ready' ? 'bg-st-ready' : 'bg-st-brewing') : 'bg-muted')} />
-                        <p className={cn('flex items-center gap-1 text-sm', active || done ? 'text-foreground' : 'text-muted-foreground', active && 'font-medium')}>
+                        <div className={cn('h-2 rounded-sm', done ? 'bg-foreground/70' : active ? (status === 'ready' ? 'bg-signal' : 'bg-brewing') : 'bg-slat')} />
+                        <p className={cn('display flex items-center gap-1 text-[1.125rem] tracking-[0.02em] sm:text-[1.375rem]', active ? (status === 'ready' ? 'text-signal' : 'text-foreground') : done ? 'text-foreground/80' : 'text-muted-foreground')}>
                             {done && <Check className="size-3.5" aria-hidden="true" />}
                             {step.label}
                         </p>

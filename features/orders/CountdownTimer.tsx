@@ -12,17 +12,26 @@ interface CountdownTimerProps {
 const WINDOW_S = ORDER_EXPIRY_MINUTES * 60;
 const WARN_S = 5 * 60;
 
-/** Ring + "18 min left". Turns crema-amber in the last 5 minutes. Announces only the 5-minute warning. */
+function secondsUntil(expiresAt: string | Date) {
+    return Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
+}
+
+/**
+ * Board-style countdown: a big mm:ss that visibly ticks, over a bar that drains
+ * across the 30-minute window and turns to the brewing colour in the last 5 minutes.
+ * (Replaces a ring that looked like a plain filled circle for most of the window.)
+ * The ticking number is not announced; only the 5-minute warning is.
+ */
 export default function CountdownTimer({ expiresAt, status }: CountdownTimerProps) {
     const isRunning = status === 'pending' || status === 'confirmed' || status === 'ready';
-    const [secondsLeft, setSecondsLeft] = useState(() => Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)));
+    const [secondsLeft, setSecondsLeft] = useState(() => secondsUntil(expiresAt));
     const [announcement, setAnnouncement] = useState('');
     const warned = useRef(false);
 
     useEffect(() => {
         if (!isRunning) return;
         const update = () => {
-            const s = Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
+            const s = secondsUntil(expiresAt);
             setSecondsLeft(s);
             if (s > 0 && s <= WARN_S && !warned.current) {
                 warned.current = true;
@@ -38,32 +47,26 @@ export default function CountdownTimer({ expiresAt, status }: CountdownTimerProp
 
     const low = secondsLeft <= WARN_S;
     const fraction = Math.min(1, secondsLeft / WINDOW_S);
-    const r = 34;
-    const c = 2 * Math.PI * r;
-    const mins = Math.ceil(secondsLeft / 60);
-    const label = secondsLeft === 0 ? 'Time’s up' : secondsLeft < 60 ? `${secondsLeft} sec left` : `${mins} min left`;
+    const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+    const ss = String(secondsLeft % 60).padStart(2, '0');
+    const summary = secondsLeft === 0 ? 'Time’s up' : `${Math.ceil(secondsLeft / 60)} minutes left to pick up`;
 
     return (
-        <div className="flex items-center gap-4">
-            <svg viewBox="0 0 80 80" className="size-20 shrink-0 -rotate-90" aria-hidden="true">
-                <circle cx="40" cy="40" r={r} fill="none" strokeWidth="6" className="stroke-muted" />
-                <circle
-                    cx="40"
-                    cy="40"
-                    r={r}
-                    fill="none"
-                    strokeWidth="6"
-                    strokeLinecap="round"
-                    strokeDasharray={c}
-                    strokeDashoffset={c * (1 - fraction)}
-                    className={cn('transition-[stroke-dashoffset] duration-1000 ease-linear', low ? 'stroke-st-brewing' : 'stroke-foreground')}
-                />
-            </svg>
-            <div>
-                <p className="display text-3xl font-semibold tabular-nums">{label}</p>
-                <p className={cn('text-sm', low ? 'font-medium' : 'text-muted-foreground')}>
-                    {low ? 'Hurry — after this the order expires.' : 'to pick up before the order expires'}
+        <div className="rounded-xl bg-panel p-5">
+            <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+                <p className={cn('display text-[3.5rem] leading-none tabular-nums', low ? 'text-brewing' : 'text-foreground')} aria-hidden="true">
+                    {secondsLeft === 0 ? '00:00' : `${mm}:${ss}`}
                 </p>
+                <p className={cn('pb-1 text-sm', low ? 'font-bold text-brewing' : 'text-muted-foreground')}>
+                    {low ? 'Hurry, after this the order expires.' : 'left to pick up before the order expires'}
+                </p>
+            </div>
+            <span className="sr-only">{summary}</span>
+            <div className="mt-4 h-2 overflow-hidden rounded-sm bg-slat" aria-hidden="true">
+                <div
+                    className={cn('h-full origin-left rounded-sm transition-transform duration-1000 ease-linear motion-reduce:transition-none', low ? 'bg-brewing' : 'bg-signal')}
+                    style={{ transform: `scaleX(${fraction})` }}
+                />
             </div>
             <p className="sr-only" aria-live="polite">{announcement}</p>
         </div>

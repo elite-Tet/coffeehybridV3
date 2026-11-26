@@ -12,6 +12,7 @@ import CountdownTimer from '@/features/orders/CountdownTimer';
 import StatusStepper from '@/features/orders/StatusStepper';
 import { ORDER_STATUS, describeCustomizations, orderCode } from '@/features/orders/order-status';
 import { cn } from '@/lib/utils';
+import { boardButtonPrimary } from '@/components/layout/board-styles';
 
 export default function OrderPage() {
     const { id } = useParams();
@@ -74,9 +75,9 @@ export default function OrderPage() {
     if (error || !order) {
         return (
             <div className="mx-auto max-w-md px-4 py-20 text-center">
-                <h1 className="display text-3xl font-semibold">We couldn’t find that order</h1>
+                <h1 className="display text-[2.5rem]">We couldn’t find that order</h1>
                 <p className="mt-2 text-muted-foreground">{error}</p>
-                <Link href="/history" className="mt-6 inline-flex h-12 items-center rounded-full bg-primary px-6 font-medium text-primary-foreground">
+                <Link href="/history" className={`${boardButtonPrimary} mt-6`}>
                     See your orders
                 </Link>
             </div>
@@ -111,17 +112,17 @@ export default function OrderPage() {
               : 'We’ll let you know here when it’s ready.';
 
     return (
-        <div className="mx-auto max-w-5xl px-4 pt-6 md:px-6 md:pt-10">
-            <Link href="/history" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+        <div className="mx-auto max-w-6xl px-4 pt-6 md:px-12 md:pt-10">
+            <Link href="/history" className="inline-flex min-h-11 items-center gap-1.5 text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="size-4" aria-hidden="true" /> Your orders
             </Link>
 
-            <header className={cn('mt-4 rounded-3xl p-5 md:p-6', ready ? 'bg-st-ready text-background' : 'bg-transparent px-0 md:px-0')}>
-                <h1 className="display flex items-center gap-3 text-4xl font-semibold md:text-5xl">
-                    {ready && <CheckCircle2 className="size-9 shrink-0" aria-hidden="true" />}
+            <header className={cn('mt-4 rounded-xl p-5 md:p-6', ready ? 'bg-signal text-roast' : 'bg-transparent px-0 md:px-0')}>
+                <h1 className="display flex items-center gap-3 text-section">
+                    {ready && <CheckCircle2 className="size-10 shrink-0" strokeWidth={2.5} aria-hidden="true" />}
                     {headline}
                 </h1>
-                <p className={cn('mt-2 text-lg', ready ? 'text-background/90' : 'text-muted-foreground')}>{sub}</p>
+                <p className={cn('mt-2 text-lg', ready ? 'text-roast/85' : 'text-muted-foreground')}>{sub}</p>
             </header>
             <p className="sr-only" aria-live="polite">{statusNote}</p>
 
@@ -131,8 +132,8 @@ export default function OrderPage() {
                 </div>
             )}
 
-            <div className="mt-8 grid gap-8 md:grid-cols-[minmax(0,26rem)_1fr] md:items-start">
-                <div className="space-y-6">
+            <div className="mt-8 grid gap-8 md:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] md:items-start">
+                <div className="min-w-0 space-y-6">
                     <PickupTicket code={code} qrValue={order.qrCode} status={order.status} name={session?.user?.name} holdUntil={order.expiresAt} />
                     {!dead && !done && (
                         <>
@@ -144,25 +145,25 @@ export default function OrderPage() {
                         </>
                     )}
                     {(dead || done) && (
-                        <Link href="/menu" className="flex h-12 items-center justify-center rounded-full bg-primary font-medium text-primary-foreground">
+                        <Link href="/menu" className={`${boardButtonPrimary} w-full`}>
                             Order again
                         </Link>
                     )}
                 </div>
 
-                <section aria-labelledby="order-items" className="rounded-3xl border bg-card">
+                <section aria-labelledby="order-items" className="min-w-0 rounded-xl bg-panel">
                     <div className="flex items-baseline justify-between px-5 pt-5">
-                        <h2 id="order-items" className="text-lg font-medium">Your items</h2>
+                        <h2 id="order-items" className="display text-[1.75rem]">Your items</h2>
                         <span className="text-sm text-muted-foreground">
                             {new Date(order.createdAt).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}
                         </span>
                     </div>
-                    <ul className="divide-y px-5">
+                    <ul className="divide-y-2 divide-slat px-5">
                         {order.items.map((item, idx) => {
                             const product = item.product as IProduct;
                             return (
                                 <li key={idx} className="flex gap-3 py-4">
-                                    <div className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-muted">
+                                    <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-slat">
                                         {product?.imageUrl && <Image src={product.imageUrl} alt="" fill sizes="56px" className="object-cover" unoptimized />}
                                     </div>
                                     <div className="min-w-0 flex-1">
@@ -171,7 +172,7 @@ export default function OrderPage() {
                                                 {item.quantity > 1 && <span className="tabular-nums">{item.quantity} × </span>}
                                                 {product?.name || 'Drink'}
                                             </p>
-                                            <p className="tabular-nums">${(item.unitPrice * item.quantity).toFixed(2)}</p>
+                                            <p className="font-bold tabular-nums">${(item.unitPrice * item.quantity).toFixed(2)}</p>
                                         </div>
                                         <p className="text-sm text-muted-foreground">{describeCustomizations(item.customizations)}</p>
                                     </div>
@@ -179,9 +180,9 @@ export default function OrderPage() {
                             );
                         })}
                     </ul>
-                    <div className="flex items-baseline justify-between border-t px-5 py-4">
+                    <div className="flex items-baseline justify-between border-t-2 border-slat px-5 py-4">
                         <span className="font-medium">Total</span>
-                        <span className="display text-2xl font-semibold tabular-nums">${order.total.toFixed(2)}</span>
+                        <span className="display text-[2.25rem] leading-none tabular-nums">${order.total.toFixed(2)}</span>
                     </div>
                 </section>
             </div>

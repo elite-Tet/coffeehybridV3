@@ -62,22 +62,22 @@ export default function ActiveOrderBar() {
             <Link
                 href={`/order/${order._id}`}
                 className={cn(
-                    'flex items-center gap-3 rounded-2xl border p-3 pr-4 shadow-lg transition-colors',
-                    ready ? 'border-transparent bg-st-ready text-background' : 'bg-card'
+                    'flex items-center gap-3 rounded-xl p-3 pr-4 shadow-[0_12px_30px_-12px_rgb(0_0_0/0.8)] transition-colors',
+                    ready ? 'bg-signal text-roast' : 'bg-panel ring-1 ring-slat'
                 )}
             >
-                <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-xl', ready ? 'bg-background/20' : s.tint)}>
+                <span className={cn('flex size-10 shrink-0 items-center justify-center rounded-sm', ready ? 'bg-roast/15' : s.tint)}>
                     <Icon className="size-5" aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1" aria-live="polite">
-                    <span className="block font-medium">
+                    <span className="display block text-[1.25rem] leading-tight">
                         {ready ? 'Your order is ready' : order.status === 'confirmed' ? `Brewing order #${orderCode(order._id)}` : `Order #${orderCode(order._id)} received`}
                     </span>
-                    <span className={cn('block text-sm', ready ? 'text-background/85' : 'text-muted-foreground')}>
+                    <span className={cn('block text-sm', ready ? 'text-roast/80' : 'text-muted-foreground')}>
                         Pick up within {mins} min
                     </span>
                 </span>
-                <span className={cn('inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium', ready ? 'bg-background text-st-ready' : 'bg-primary text-primary-foreground')}>
+                <span className={cn('inline-flex shrink-0 items-center gap-1.5 rounded-sm px-3 py-2 text-sm font-bold', ready ? 'bg-roast text-signal' : 'bg-signal text-roast')}>
                     <QrCode className="size-4" aria-hidden="true" />
                     Show code
                 </span>
