@@ -389,7 +389,7 @@ export default function ProductManagement() {
                             </div>
                         </div>
 
-                        <DialogFooter className="gap-3 sm:gap-3">
+                        <DialogFooter className="-mx-6 -mb-6 gap-3 bg-slat/40 p-6 sm:gap-3">
                             <button type="button" onClick={() => setIsDialogOpen(false)} className={cn(boardButtonGhost, 'flex-1')}>Cancel</button>
                             <button type="submit" className={cn(boardButtonPrimary, 'flex-1')}>
                                 {editingProduct ? 'Save changes' : 'Create product'}

@@ -173,20 +173,19 @@ export default function QRScanner() {
                     </button>
                 </section>
             ) : (
-                <div className="relative overflow-hidden rounded-xl bg-black">
-                    <div id="reader" className="w-full overflow-hidden [&>div]:!border-none [&>div]:!shadow-none" />
+                <figure>
+                    <div className="relative overflow-hidden rounded-xl bg-black">
+                        <div id="reader" className="w-full overflow-hidden [&>div]:!border-none [&>div]:!shadow-none" />
 
-                    {isVerifying ? (
-                        <div className="absolute inset-0 z-50 flex items-center justify-center gap-3 bg-roast/85" role="status">
-                            <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
-                            <span className="font-bold">Checking the code…</span>
-                        </div>
-                    ) : (
-                        <p className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black to-transparent px-6 pb-5 pt-10 text-center text-sm text-white/80">
-                            Hold the ticket’s QR code inside the frame.
-                        </p>
-                    )}
-                </div>
+                        {isVerifying && (
+                            <div className="absolute inset-0 z-50 flex items-center justify-center gap-3 bg-roast/85" role="status">
+                                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                                <span className="font-bold">Checking the code…</span>
+                            </div>
+                        )}
+                    </div>
+                    <figcaption className="mt-2 text-sm text-muted-foreground">Hold the ticket’s QR code inside the camera frame.</figcaption>
+                </figure>
             )}
 
             {!scanResult && (

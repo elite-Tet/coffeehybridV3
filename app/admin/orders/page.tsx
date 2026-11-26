@@ -121,8 +121,14 @@ export default function OrderHistory() {
                         const id = order._id.toString();
                         const user = order.user as IUser;
                         const placed = new Date(order.createdAt);
+                        const when = (
+                            <time dateTime={placed.toISOString()}>
+                                {placed.toLocaleDateString([], { month: 'short', day: 'numeric' })},{' '}
+                                {placed.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                            </time>
+                        );
                         return (
-                            <li key={id} className="grid grid-cols-[auto_1fr_auto] items-start gap-x-4 gap-y-2 rounded-sm bg-slat px-4 py-3 md:grid-cols-[5.5rem_1fr_auto_auto] md:items-center">
+                            <li key={id} className="grid grid-cols-[4.75rem_1fr_auto] items-start gap-x-4 gap-y-2 rounded-sm bg-slat px-4 py-3 md:grid-cols-[5.5rem_1fr_auto_auto] md:items-center">
                                 <p className="ticket-number text-[2rem]" title={id}>
                                     <span className="sr-only">Order </span>{orderCode(id)}
                                 </p>
@@ -133,16 +139,14 @@ export default function OrderHistory() {
                                         {order.items.map((item) => `${item.quantity} × ${itemName(item)}`).join(', ')}
                                     </p>
                                 </div>
-                                <div className="row-span-2 text-right md:row-span-1 md:order-last">
+                                <div className="text-right md:order-last">
                                     <p className="font-bold tabular-nums">${order.total.toFixed(2)}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                        <time dateTime={placed.toISOString()}>
-                                            {placed.toLocaleDateString([], { month: 'short', day: 'numeric' })},{' '}
-                                            {placed.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                                        </time>
-                                    </p>
+                                    <p className="hidden text-sm text-muted-foreground md:block">{when}</p>
                                 </div>
-                                <StatusChip status={order.status} className="col-start-2 justify-self-start md:col-start-auto" />
+                                <div className="col-span-2 col-start-2 flex flex-wrap items-center gap-x-3 gap-y-1 md:col-span-1 md:col-start-auto">
+                                    <StatusChip status={order.status} className="whitespace-nowrap" />
+                                    <span className="text-sm text-muted-foreground md:hidden">{when}</span>
+                                </div>
                             </li>
                         );
                     })}
