@@ -25,6 +25,19 @@ export default function QRScanner() {
     const scannerRef = useRef<Html5QrcodeScanner | null>(null);
     const [manualCode, setManualCode] = useState('');
 
+    /**
+     * Restart the camera for the next scan. The scanner is only ever paused,
+     * never cleared, while this page is open: #reader stays mounted (hidden
+     * behind the result card), so resume() always has a live scanner to wake.
+     */
+    const resumeScanning = useCallback(() => {
+        if (scannerRef.current) {
+            try { scannerRef.current.resume(); } catch { /* not paused, e.g. camera never started */ }
+        }
+        isVerifyingRef.current = false;
+        setIsVerifying(false);
+    }, []);
+
     /** One verification path for both the camera scan ({ qrCode }) and the typed ticket code ({ orderCode }). */
     const verify = useCallback(async (payload: { qrCode: string } | { orderCode: string }) => {
         if (isVerifyingRef.current) return;
@@ -48,24 +61,21 @@ export default function QRScanner() {
                 setScanResult({ success: true, data: data.data });
                 setManualCode('');
                 toast.success('Order Verified!');
-                // Optionally clear scanner on success
-                scannerRef.current?.clear();
+                // Camera stays paused until staff tap Next Customer
             } else {
                 setScanResult({ success: false, error: data.error, data: data.data });
                 toast.error(data.error || 'Verification failed');
                 // On failure, allow scanning again after a delay
                 setTimeout(() => {
-                    isVerifyingRef.current = false;
-                    setIsVerifying(false);
                     setScanResult(null);
+                    resumeScanning();
                 }, 3000);
             }
         } catch {
             toast.error('Network error during verification');
-            isVerifyingRef.current = false;
-            setIsVerifying(false);
+            resumeScanning();
         }
-    }, []);
+    }, [resumeScanning]);
 
     useEffect(() => {
         // Prevent double initialization
@@ -99,7 +109,7 @@ export default function QRScanner() {
         scanner.render(onScanSuccess, onScanFailure);
         scannerRef.current = scanner;
 
-        // Cleanup function
+        // Cleanup on unmount: the only place the scanner is cleared
         return () => {
              if (scannerRef.current) {
                 try {
@@ -114,15 +124,7 @@ export default function QRScanner() {
 
     const resetScan = () => {
         setScanResult(null);
-        if (scannerRef.current) {
-            try {
-                scannerRef.current.resume();
-            } catch {
-                // Ignore if not paused
-            }
-        }
-        isVerifyingRef.current = false;
-        setIsVerifying(false);
+        resumeScanning();
     };
 
     return (
@@ -139,13 +141,12 @@ export default function QRScanner() {
                 </div>
             </header>
 
-            <AnimatePresence mode="wait">
-                {scanResult ? (
+            <AnimatePresence initial={false}>
+                {scanResult && (
                     <motion.div
                         key="result"
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 1.1 }}
                         className="p-8 rounded-[2rem] bg-card/60 backdrop-blur-xl border border-border/40 shadow-2xl flex flex-col items-center text-center gap-8"
                     >
                         {scanResult.success ? (
@@ -189,34 +190,35 @@ export default function QRScanner() {
                             Next Customer
                         </Button>
                     </motion.div>
-                ) : (
-                    <motion.div
-                        key="scanner"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="relative overflow-hidden rounded-[2rem] border border-border/40 bg-black backdrop-blur-md shadow-2xl"
-                    >
-                        <div id="reader" className="w-full overflow-hidden [&>div]:!shadow-none [&>div]:!border-none" />
-
-                        {/* Scanner Laser (Pure visual effect) */}
-                        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-signal/80 shadow-[0_0_15px_var(--signal)] z-10 pointer-events-none opacity-50" />
-
-                        {isVerifying ? (
-                            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-50">
-                                <Loader2 className="w-12 h-12 animate-spin text-primary" />
-                                <p className="font-black text-sm uppercase tracking-widest text-primary animate-pulse">Verifying...</p>
-                            </div>
-                        ) : (
-                            <div className="absolute inset-x-0 bottom-0 p-8 bg-gradient-to-t from-black to-transparent pointer-events-none z-20">
-                                <div className="flex items-center justify-center gap-3 text-white/70 animate-pulse">
-                                    <span className="w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_theme(colors.primary.DEFAULT)]" />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Scanning Active...</span>
-                                </div>
-                            </div>
-                        )}
-                    </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Kept mounted the whole time so html5-qrcode keeps its #reader element; hidden while a result shows */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                hidden={!!scanResult}
+                className="relative overflow-hidden rounded-[2rem] border border-border/40 bg-black backdrop-blur-md shadow-2xl"
+            >
+                <div id="reader" className="w-full overflow-hidden [&>div]:!shadow-none [&>div]:!border-none" />
+
+                {/* Scanner Laser (Pure visual effect) */}
+                <div className="absolute top-1/2 left-0 w-full h-0.5 bg-signal/80 shadow-[0_0_15px_var(--signal)] z-10 pointer-events-none opacity-50" />
+
+                {isVerifying ? (
+                    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-50">
+                        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+                        <p className="font-black text-sm uppercase tracking-widest text-primary animate-pulse">Verifying...</p>
+                    </div>
+                ) : (
+                    <div className="absolute inset-x-0 bottom-0 p-8 bg-gradient-to-t from-black to-transparent pointer-events-none z-20">
+                        <div className="flex items-center justify-center gap-3 text-white/70 animate-pulse">
+                            <span className="w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_theme(colors.primary.DEFAULT)]" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Scanning Active...</span>
+                        </div>
+                    </div>
+                )}
+            </motion.div>
 
             {!scanResult && (
                 <form
