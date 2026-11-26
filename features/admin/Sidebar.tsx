@@ -88,8 +88,8 @@ export default function Sidebar() {
                     <Coffee className="w-5 h-5" />
                     ADMINOS
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setIsOpen(true)}>
-                    <Menu className="w-6 h-6" />
+                <Button variant="ghost" size="icon" onClick={() => setIsOpen(true)} aria-label="Open menu" aria-expanded={isOpen}>
+                    <Menu className="w-6 h-6" aria-hidden="true" />
                 </Button>
             </div>
 
@@ -114,10 +114,11 @@ export default function Sidebar() {
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="absolute top-4 right-4 text-white"
+                                className="absolute top-4 right-4 text-foreground"
                                 onClick={() => setIsOpen(false)}
+                                aria-label="Close menu"
                             >
-                                <X className="w-6 h-6" />
+                                <X className="w-6 h-6" aria-hidden="true" />
                             </Button>
                         </motion.aside>
                     </div>

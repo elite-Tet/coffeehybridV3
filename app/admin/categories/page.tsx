@@ -172,11 +172,11 @@ export default function CategoryManagement() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Button variant="ghost" size="icon" className="rounded-xl hover:bg-primary/10 hover:text-primary" onClick={() => openEditDialog(category)}>
-                                        <Edit2 className="w-5 h-5" />
+                                    <Button variant="ghost" size="icon" className="rounded-xl hover:bg-primary/10 hover:text-primary" onClick={() => openEditDialog(category)} aria-label={`Edit ${category.name}`}>
+                                        <Edit2 className="w-5 h-5" aria-hidden="true" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" className="rounded-xl hover:bg-destructive/10 hover:text-destructive" onClick={() => handleDelete(category._id.toString())}>
-                                        <Trash2 className="w-5 h-5" />
+                                    <Button variant="ghost" size="icon" className="rounded-xl hover:bg-destructive/10 hover:text-destructive" onClick={() => handleDelete(category._id.toString())} aria-label={`Delete ${category.name}`}>
+                                        <Trash2 className="w-5 h-5" aria-hidden="true" />
                                     </Button>
                                     <div className="w-px h-8 bg-border/20 mx-2" />
                                     <ChevronRight className="w-5 h-5 text-muted-foreground/30 group-hover:text-primary transition-colors" />

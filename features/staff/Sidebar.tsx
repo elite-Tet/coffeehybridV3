@@ -53,7 +53,7 @@ function NavContent({ pathname, onLinkClick }: { pathname: string; onLinkClick?:
                 <div className="p-4 rounded-3xl bg-primary/5 border border-primary/10">
                     <p className="text-[10px] font-black uppercase text-primary tracking-widest mb-1.5 opacity-60">System Status</p>
                     <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <div className="w-2 h-2 rounded-full bg-st-ready animate-pulse" />
                         <span className="text-xs font-bold text-foreground/80">Verifying Connections</span>
                     </div>
                 </div>
@@ -87,8 +87,8 @@ export default function Sidebar() {
                     <Coffee className="w-5 h-5" />
                     STAFFHUB
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setIsOpen(true)}>
-                    <Menu className="w-6 h-6" />
+                <Button variant="ghost" size="icon" onClick={() => setIsOpen(true)} aria-label="Open menu" aria-expanded={isOpen}>
+                    <Menu className="w-6 h-6" aria-hidden="true" />
                 </Button>
             </div>
 
@@ -113,10 +113,11 @@ export default function Sidebar() {
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="absolute top-4 right-4 text-white"
+                                className="absolute top-4 right-4 text-foreground"
                                 onClick={() => setIsOpen(false)}
+                                aria-label="Close menu"
                             >
-                                <X className="w-6 h-6" />
+                                <X className="w-6 h-6" aria-hidden="true" />
                             </Button>
                         </motion.aside>
                     </div>

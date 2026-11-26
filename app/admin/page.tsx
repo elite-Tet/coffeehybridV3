@@ -90,7 +90,7 @@ export default function AdminDashboard() {
             <CardContent>
                 <div className="text-3xl font-black tracking-tighter mb-1">{value}</div>
                 <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-0.5 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
+                    <span className="text-[10px] font-bold text-st-ready flex items-center gap-0.5 bg-st-ready/10 px-1.5 py-0.5 rounded-full">
                         <ArrowUpRight className="w-3 h-3" />
                         {trend}
                     </span>
@@ -148,8 +148,8 @@ export default function AdminDashboard() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         {[
-                            { label: 'Completed', count: stats?.statusBreakdown?.completed || 0, icon: CheckCircle, color: 'text-emerald-500' },
-                            { label: 'Pending', count: stats?.statusBreakdown?.pending || 0, icon: Clock, color: 'text-amber-500' },
+                            { label: 'Completed', count: stats?.statusBreakdown?.completed || 0, icon: CheckCircle, color: 'text-st-done' },
+                            { label: 'Pending', count: stats?.statusBreakdown?.pending || 0, icon: Clock, color: 'text-st-brewing' },
                             { label: 'Expired', count: (stats?.statusBreakdown?.expired || 0) + (stats?.statusBreakdown?.cancelled || 0), icon: XCircle, color: 'text-destructive' },
                         ].map((item) => (
                             <div key={item.label} className="flex justify-between items-center p-4 rounded-3xl bg-muted/20 border border-border/10">

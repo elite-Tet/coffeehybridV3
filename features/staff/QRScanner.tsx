@@ -1,13 +1,14 @@
 // FIX: Replaced 'any' with proper type definition for scanResult
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { toast } from 'sonner';
 import { Loader2, ArrowLeft, CheckCircle, XCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
+import { orderCode } from '@/features/orders/order-status';
 
 interface ScanResult {
     success: boolean;
@@ -22,6 +23,49 @@ export default function QRScanner() {
     const [isVerifying, setIsVerifying] = useState(false);
     const isVerifyingRef = useRef(false); // Ref to track verifying state without re-triggering effect
     const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+    const [manualCode, setManualCode] = useState('');
+
+    /** One verification path for both the camera scan ({ qrCode }) and the typed ticket code ({ orderCode }). */
+    const verify = useCallback(async (payload: { qrCode: string } | { orderCode: string }) => {
+        if (isVerifyingRef.current) return;
+        isVerifyingRef.current = true;
+        setIsVerifying(true);
+
+        // Stop the camera while we check this one
+        if (scannerRef.current) {
+            try { scannerRef.current.pause(); } catch { /* not scanning */ }
+        }
+
+        try {
+            const response = await fetch('/api/staff/verify-qr', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                setScanResult({ success: true, data: data.data });
+                setManualCode('');
+                toast.success('Order Verified!');
+                // Optionally clear scanner on success
+                scannerRef.current?.clear();
+            } else {
+                setScanResult({ success: false, error: data.error, data: data.data });
+                toast.error(data.error || 'Verification failed');
+                // On failure, allow scanning again after a delay
+                setTimeout(() => {
+                    isVerifyingRef.current = false;
+                    setIsVerifying(false);
+                    setScanResult(null);
+                }, 3000);
+            }
+        } catch {
+            toast.error('Network error during verification');
+            isVerifyingRef.current = false;
+            setIsVerifying(false);
+        }
+    }, []);
 
     useEffect(() => {
         // Prevent double initialization
@@ -44,46 +88,8 @@ export default function QRScanner() {
             /* verbose= */ false
         );
 
-        const onScanSuccess = async (decodedText: string) => {
-            if (isVerifyingRef.current) return;
-            
-            console.log(`Scan verified: ${decodedText}`);
-            isVerifyingRef.current = true;
-            setIsVerifying(true);
-            
-            // Clean up scanner immediately to stop usage
-            if(scannerRef.current) {
-                scannerRef.current.pause();
-            }
-
-            try {
-                const response = await fetch('/api/staff/verify-qr', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ qrCode: decodedText })
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    setScanResult({ success: true, data: data.data });
-                    toast.success('Order Verified!');
-                    // Optionally clear scanner on success
-                    scannerRef.current?.clear();
-                } else {
-                    setScanResult({ success: false, error: data.error, data: data.data });
-                    toast.error(data.error || 'Verification failed');
-                    // On failure, allow scanning again after a delay
-                    setTimeout(() => {
-                        isVerifyingRef.current = false;
-                        setIsVerifying(false);
-                        setScanResult(null); 
-                    }, 3000);
-                }
-            } catch {
-                toast.error('Network error during verification');
-                isVerifyingRef.current = false;
-                setIsVerifying(false);
-            }
+        const onScanSuccess = (decodedText: string) => {
+            verify({ qrCode: decodedText });
         };
 
         const onScanFailure = () => {
@@ -104,7 +110,7 @@ export default function QRScanner() {
                 scannerRef.current = null;
             }
         };
-    }, []); // Empty dependency array - run ONLY on mount
+    }, [verify]); // verify is stable, so this still runs once on mount
 
     const resetScan = () => {
         setScanResult(null);
@@ -122,11 +128,11 @@ export default function QRScanner() {
     return (
         <div className="w-full max-w-2xl mx-auto space-y-6">
             <header className="flex items-center gap-4">
-                <Link href="/staff">
-                    <Button variant="outline" size="icon" className="rounded-full h-12 w-12 hover:bg-primary/10">
-                        <ArrowLeft className="w-5 h-5" />
-                    </Button>
-                </Link>
+                <Button asChild variant="outline" size="icon" className="rounded-full h-12 w-12 hover:bg-primary/10">
+                    <Link href="/staff" aria-label="Back to the order queue">
+                        <ArrowLeft className="w-5 h-5" aria-hidden="true" />
+                    </Link>
+                </Button>
                 <div>
                     <h1 className="text-3xl font-black tracking-tighter">QR VERIFICATION</h1>
                     <p className="text-muted-foreground text-sm font-medium">Verify pickup tokens instantly.</p>
@@ -144,16 +150,16 @@ export default function QRScanner() {
                     >
                         {scanResult.success ? (
                             <>
-                                <div className="p-6 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/10">
+                                <div className="p-6 rounded-full bg-st-ready/10 text-st-ready border border-st-ready/10">
                                     <CheckCircle className="w-16 h-16" />
                                 </div>
                                 <div className="space-y-2">
-                                    <h2 className="text-4xl font-black tracking-tighter text-emerald-500 uppercase">Verified</h2>
-                                    <p className="font-mono text-xs opacity-60">ORDER #{scanResult.data?._id.toString().slice(-8).toUpperCase()}</p>
+                                    <h2 className="text-4xl font-black tracking-tighter text-st-ready uppercase">Verified</h2>
+                                    <p className="font-mono text-xs opacity-60">ORDER {scanResult.data ? orderCode(scanResult.data._id.toString()) : ''}</p>
                                 </div>
-                                <div className="w-full p-6 rounded-3xl bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-between font-bold">
+                                <div className="w-full p-6 rounded-3xl bg-st-ready/5 border border-st-ready/10 flex items-center justify-between font-bold">
                                     <span>Customer Ready</span>
-                                    <span className="text-emerald-500">Pick up now</span>
+                                    <span className="text-st-ready">Pick up now</span>
                                 </div>
                             </>
                         ) : (
@@ -165,7 +171,7 @@ export default function QRScanner() {
                                     <h2 className="text-4xl font-black tracking-tighter text-destructive uppercase">Error</h2>
                                     <p className="font-bold text-lg opacity-80">{scanResult.error}</p>
                                     {scanResult.data?._id && (
-                                        <p className="font-mono text-xs opacity-60">ORDER #{scanResult.data._id.toString().slice(-8).toUpperCase()}</p>
+                                        <p className="font-mono text-xs opacity-60">ORDER {orderCode(scanResult.data._id.toString())}</p>
                                     )}
                                 </div>
                                 <div className="w-full p-4 rounded-3xl bg-destructive/5 text-destructive font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
@@ -177,7 +183,7 @@ export default function QRScanner() {
 
                         <Button
                             onClick={resetScan}
-                            className={`w-full h-16 text-xl font-black gap-2 transition-all duration-500 ${scanResult.success ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-primary'}`}
+                            className={`w-full h-16 text-xl font-black gap-2 transition-all duration-500 ${scanResult.success ? 'bg-signal text-roast hover:bg-signal/85' : 'bg-primary'}`}
                         >
                             <RefreshCw className="w-6 h-6" />
                             Next Customer
@@ -193,7 +199,7 @@ export default function QRScanner() {
                         <div id="reader" className="w-full overflow-hidden [&>div]:!shadow-none [&>div]:!border-none" />
 
                         {/* Scanner Laser (Pure visual effect) */}
-                        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.8)] z-10 pointer-events-none opacity-50" />
+                        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-signal/80 shadow-[0_0_15px_var(--signal)] z-10 pointer-events-none opacity-50" />
 
                         {isVerifying ? (
                             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-50">
@@ -211,6 +217,44 @@ export default function QRScanner() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {!scanResult && (
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        if (manualCode.trim()) verify({ orderCode: manualCode.trim() });
+                    }}
+                    className="rounded-xl bg-panel p-5"
+                    aria-labelledby="manual-code-title"
+                >
+                    <h2 id="manual-code-title" className="display text-[1.5rem]">Camera not working?</h2>
+                    <p id="manual-code-hint" className="mt-1 text-sm text-muted-foreground">
+                        Type the 4-character code on the customer’s ticket, for example 49CC.
+                    </p>
+                    <div className="mt-3 flex gap-2">
+                        <label htmlFor="manual-code" className="sr-only">Order code</label>
+                        <input
+                            id="manual-code"
+                            value={manualCode}
+                            onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+                            maxLength={4}
+                            autoComplete="off"
+                            autoCapitalize="characters"
+                            spellCheck={false}
+                            aria-describedby="manual-code-hint"
+                            placeholder="49CC"
+                            className="display h-12 w-full min-w-0 rounded-sm border border-input bg-roast px-3 text-[1.75rem] tracking-[0.2em] text-foreground outline-none placeholder:text-muted-foreground/50 focus-visible:border-signal focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                        <button
+                            type="submit"
+                            disabled={isVerifying || manualCode.trim().length !== 4}
+                            className="display min-h-12 shrink-0 rounded-sm bg-signal px-5 text-[1.25rem] text-roast transition-colors hover:bg-signal/85 disabled:opacity-50"
+                        >
+                            Check code
+                        </button>
+                    </div>
+                </form>
+            )}
         </div>
     );
 }

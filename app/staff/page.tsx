@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { orderCode } from '@/features/orders/order-status';
 
 export default function OrderQueue() {
     const [orders, setOrders] = useState<IOrder[]>([]);
@@ -106,7 +107,7 @@ export default function OrderQueue() {
                                         <div className="space-y-1">
                                             <CardTitle className="text-xs font-black text-muted-foreground uppercase flex items-center gap-2">
                                                 <ShoppingBag className="w-3 h-3 text-primary" />
-                                                Order #{order._id.toString().slice(-6).toUpperCase()}
+                                                Order {orderCode(order._id.toString())}
                                             </CardTitle>
                                             <CardDescription className="text-[10px] font-bold">
                                                 Placed: {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -147,7 +148,7 @@ export default function OrderQueue() {
                                     )}
                                     {order.status === 'ready' && (
                                         <div className="w-full flex flex-col items-center gap-1">
-                                            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center w-full gap-2 border border-emerald-500/10">
+                                            <div className="p-2 rounded-xl bg-st-ready/10 text-st-ready flex items-center justify-center w-full gap-2 border border-st-ready/10">
                                                 <Clock className="w-4 h-4 animate-pulse" />
                                                 <span className="text-[10px] font-black uppercase">Awaiting Scan</span>
                                             </div>
@@ -189,7 +190,7 @@ export default function OrderQueue() {
                 <Column
                     title="Active Brewing"
                     icon={Clock}
-                    color="bg-amber-500/10 border-amber-500/20 text-amber-500"
+                    color="bg-st-brewing/10 border-st-brewing/20 text-st-brewing"
                     list={confirmedOrders}
                     nextStatus="ready"
                     nextLabel="Mark as Ready"
@@ -197,7 +198,7 @@ export default function OrderQueue() {
                 <Column
                     title="Ready for Pickup"
                     icon={CheckCircle}
-                    color="bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
+                    color="bg-st-ready/10 border-st-ready/20 text-st-ready"
                     list={readyOrders}
                 />
             </div>

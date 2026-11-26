@@ -60,8 +60,8 @@ export default function OrderHistory() {
 
     const statusMap: Record<OrderStatus, StatusMapEntry> = {
         pending: { label: 'Pending', icon: Clock, color: 'bg-muted border-border/40 text-muted-foreground' },
-        confirmed: { label: 'Confirmed', icon: RotateCcw, color: 'bg-amber-500/10 border-amber-500/20 text-amber-500' },
-        ready: { label: 'Ready', icon: CheckCircle, color: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' },
+        confirmed: { label: 'Confirmed', icon: RotateCcw, color: 'bg-st-brewing/10 border-st-brewing/20 text-st-brewing' },
+        ready: { label: 'Ready', icon: CheckCircle, color: 'bg-st-ready/10 border-st-ready/20 text-st-ready' },
         completed: { label: 'Completed', icon: CheckCircle, color: 'bg-primary/10 border-primary/20 text-primary' },
         expired: { label: 'Expired', icon: XCircle, color: 'bg-destructive/10 border-destructive/20 text-destructive' },
         cancelled: { label: 'Cancelled', icon: XCircle, color: 'bg-destructive/10 border-destructive/20 text-destructive' },

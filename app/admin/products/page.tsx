@@ -212,7 +212,7 @@ export default function ProductManagement() {
                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100"
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
-                                        <Badge className={`absolute top-4 right-4 ${product.isAvailable ? 'bg-emerald-500/20 text-emerald-500' : 'bg-destructive/20 text-destructive'} border-none font-black text-[8px] uppercase tracking-widest`}>
+                                        <Badge className={`absolute top-4 right-4 ${product.isAvailable ? 'bg-roast/85 text-st-ready' : 'bg-roast/85 text-destructive'} border-none font-black text-[8px] uppercase tracking-widest`}>
                                             {product.isAvailable ? 'Available' : 'Sold Out'}
                                         </Badge>
                                     </div>
@@ -230,11 +230,11 @@ export default function ProductManagement() {
                                                 {typeof product.category === 'object' ? (product.category as ICategory).name : 'Internal ID'}
                                             </Badge>
                                             <div className="flex gap-1">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary" onClick={() => openEditDialog(product)}>
-                                                    <Edit2 className="w-4 h-4" />
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary" onClick={() => openEditDialog(product)} aria-label={`Edit ${product.name}`}>
+                                                    <Edit2 className="w-4 h-4" aria-hidden="true" />
                                                 </Button>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive" onClick={() => handleDelete(product._id.toString())}>
-                                                    <Trash2 className="w-4 h-4" />
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive" onClick={() => handleDelete(product._id.toString())} aria-label={`Delete ${product.name}`}>
+                                                    <Trash2 className="w-4 h-4" aria-hidden="true" />
                                                 </Button>
                                             </div>
                                         </div>
@@ -324,7 +324,7 @@ export default function ProductManagement() {
                                 <div className="p-4 rounded-3xl bg-muted/20 border border-border/10 space-y-4">
                                     <div className="flex items-center justify-between">
                                         <span className="text-[10px] font-black tracking-wider uppercase opacity-80">Size Options</span>
-                                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6"><Plus className="w-3 h-3" /></Button>
+                                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6" aria-label="Add size option"><Plus className="w-3 h-3" aria-hidden="true" /></Button>
                                     </div>
                                     {/* FIX: Removed 'any' type, TypeScript infers from formData.customizationOptions.sizes */}
                                     {formData.customizationOptions.sizes.map((s, i: number) => (
