@@ -12,52 +12,55 @@ interface ProductCardProps {
     onQuickAdd: (product: IProduct) => void;
 }
 
-/** Whole card opens the customize sheet; the round + adds it with default options. */
+/**
+ * A menu row styled like a board slat: photo, big name, price.
+ * The row opens the customize sheet; the + button adds it with default options.
+ * (Two sibling buttons, not nested, so both stay keyboard-reachable.)
+ */
 export default function ProductCard({ product, onOpen, onQuickAdd }: ProductCardProps) {
     const soldOut = !product.isAvailable;
     const [broken, setBroken] = useState(!product.imageUrl);
 
     return (
-        <article className="group relative flex flex-col">
+        <article className="group relative h-full">
             <button
                 type="button"
                 onClick={() => onOpen(product)}
                 disabled={soldOut}
-                className="flex flex-col text-left disabled:cursor-not-allowed"
-                aria-label={soldOut ? `${product.name}, sold out` : `Customize ${product.name}`}
+                className="flex h-full w-full gap-4 rounded-xl bg-panel p-3 pr-16 text-left transition-colors hover:bg-slat disabled:cursor-not-allowed"
+                aria-label={soldOut ? `${product.name}, sold out` : `Customize ${product.name}, $${product.basePrice.toFixed(2)}`}
             >
-                <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-muted">
+                <span className="relative size-24 shrink-0 overflow-hidden rounded-lg bg-slat sm:size-28">
                     {broken ? (
-                        <span className="flex h-full items-center justify-center text-muted-foreground/50"><Coffee className="size-10" aria-hidden="true" /></span>
+                        <span className="flex h-full items-center justify-center text-muted-foreground/60"><Coffee className="size-8" aria-hidden="true" /></span>
                     ) : (
-                    <Image
-                        onError={() => setBroken(true)}
-                        src={product.imageUrl}
-                        alt=""
-                        fill
-                        sizes="(min-width: 1024px) 25vw, 50vw"
-                        className={cn('object-cover transition-transform duration-500', !soldOut && 'group-hover:scale-[1.03]', soldOut && 'grayscale opacity-60')}
-                    />
+                        <Image
+                            onError={() => setBroken(true)}
+                            src={product.imageUrl}
+                            alt=""
+                            fill
+                            sizes="112px"
+                            className={cn('object-cover', soldOut && 'grayscale opacity-60')}
+                        />
                     )}
-                    {soldOut && (
-                        <span className="absolute left-3 top-3 rounded-full bg-background px-2.5 py-1 text-sm font-medium">Sold out</span>
-                    )}
-                </div>
-                <div className="mt-3 space-y-0.5 pr-12">
-                    <h3 className="font-medium leading-snug">{product.name}</h3>
-                    <p className="line-clamp-1 text-sm text-muted-foreground">{product.description}</p>
-                    <p className="pt-1 text-sm font-medium tabular-nums text-roast">${product.basePrice.toFixed(2)}</p>
-                </div>
+                </span>
+                <span className="flex min-w-0 flex-col justify-center gap-1">
+                    <span className="display text-[1.75rem] leading-none transition-colors group-hover:text-signal">{product.name}</span>
+                    <span className="line-clamp-2 text-sm text-muted-foreground">{product.description}</span>
+                    <span className="text-lg font-bold tabular-nums">
+                        {soldOut ? <span className="text-muted-foreground">Sold out</span> : `$${product.basePrice.toFixed(2)}`}
+                    </span>
+                </span>
             </button>
 
             {!soldOut && (
                 <button
                     type="button"
                     onClick={() => onQuickAdd(product)}
-                    className="absolute bottom-1 right-0 flex size-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-transform active:scale-95"
+                    className="absolute right-3 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-sm bg-signal text-roast transition-colors hover:bg-[#ffc457] active:scale-95"
                     aria-label={`Add ${product.name} with default options`}
                 >
-                    <Plus className="size-5" aria-hidden="true" />
+                    <Plus className="size-5" strokeWidth={2.5} aria-hidden="true" />
                 </button>
             )}
         </article>

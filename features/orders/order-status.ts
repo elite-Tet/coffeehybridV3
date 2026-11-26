@@ -22,8 +22,9 @@ export function orderCode(id: string): string {
 export function describeCustomizations(c: { size?: string; sugarLevel?: string; iceOption?: string; addOns?: string[] }): string {
     const parts = [
         c.size,
-        c.sugarLevel ? `${c.sugarLevel} sugar` : undefined,
-        c.iceOption ? `${c.iceOption.toLowerCase().includes('ice') ? c.iceOption : `${c.iceOption} ice`}` : undefined,
+        // Labels like "No Sugar" or "Light Ice" already name the thing; "Hot" is not an ice level.
+        c.sugarLevel ? (/sugar/i.test(c.sugarLevel) ? c.sugarLevel : `${c.sugarLevel} sugar`) : undefined,
+        c.iceOption ? (/ice|^hot$/i.test(c.iceOption) ? c.iceOption : `${c.iceOption} ice`) : undefined,
         ...(c.addOns ?? []),
     ].filter(Boolean);
     return parts.join(', ');

@@ -9,6 +9,8 @@ import CategoryTabs from '@/features/menu/CategoryTabs';
 import ProductCard from '@/features/menu/ProductCard';
 import ProductModal from '@/features/menu/ProductModal';
 import { useCartStore } from '@/features/cart/cart.store';
+import { describeCustomizations } from '@/features/orders/order-status';
+import { boardButtonPrimary } from '@/components/layout/board-styles';
 
 function greeting() {
     const h = new Date().getHours();
@@ -74,9 +76,10 @@ export default function MenuPage() {
     const quickAdd = (p: IProduct) => {
         const o = p.customizationOptions;
         const size = o.sizes[0];
-        addItem(p, { size: size?.label, sugarLevel: o.sugarLevels[0], iceOption: o.iceOptions[0], addOns: [] }, p.basePrice + (size?.priceModifier ?? 0));
+        const defaults = { size: size?.label, sugarLevel: o.sugarLevels[0], iceOption: o.iceOptions[0], addOns: [] };
+        addItem(p, defaults, p.basePrice + (size?.priceModifier ?? 0));
         toast.success(`${p.name} added`, {
-            description: [size?.label, o.sugarLevels[0] && `${o.sugarLevels[0]} sugar`].filter(Boolean).join(', '),
+            description: describeCustomizations(defaults),
             action: { label: 'Customize', onClick: () => openProduct(p) },
         });
     };
@@ -84,13 +87,13 @@ export default function MenuPage() {
     const firstName = session?.user?.name?.split(' ')[0];
 
     return (
-        <div className="mx-auto max-w-6xl px-4 pt-6 md:px-6 md:pt-10">
-            <header className="space-y-1">
+        <div className="mx-auto max-w-7xl px-4 pt-8 md:px-12 md:pt-12">
+            <header>
                 <p className="text-muted-foreground">{firstName ? `${greeting()}, ${firstName}` : greeting()}</p>
-                <h1 className="display text-4xl font-semibold md:text-5xl">What are you drinking?</h1>
+                <h1 className="display mt-1 text-section">What are you drinking?</h1>
             </header>
 
-            <div className="sticky top-14 z-20 -mx-4 mt-6 space-y-3 border-b bg-background/95 px-4 py-3 backdrop-blur-sm md:top-16 md:mx-0 md:flex md:items-center md:gap-4 md:space-y-0 md:border-0 md:px-0">
+            <div className="sticky top-16 z-20 -mx-4 mt-8 space-y-3 bg-background/95 px-4 py-3 backdrop-blur-sm md:top-[72px] md:mx-0 md:flex md:items-center md:gap-4 md:space-y-0 md:px-0">
                 <div role="search" className="relative block md:order-2 md:ml-auto md:w-72">
                     <label htmlFor="menu-search" className="sr-only">Search the menu</label>
                     <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
@@ -103,40 +106,58 @@ export default function MenuPage() {
                         enterKeyHint="search"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-11 w-full rounded-full border border-input bg-card pl-10 pr-4 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="h-11 w-full rounded-sm border border-input bg-panel pl-10 pr-4 text-base outline-none placeholder:text-muted-foreground focus-visible:border-signal focus-visible:ring-2 focus-visible:ring-ring"
                     />
                 </div>
                 <CategoryTabs categories={categories.filter((c) => c.isActive)} activeCategory={activeCategory} onSelect={setActiveCategory} />
             </div>
 
             {loading ? (
-                <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4" aria-label="Loading menu">
-                    {Array.from({ length: 8 }).map((_, i) => (
-                        <li key={i} className="space-y-3">
-                            <div className="aspect-[4/5] animate-pulse rounded-2xl bg-muted" />
-                            <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
-                            <div className="h-3 w-1/3 animate-pulse rounded bg-muted" />
+                <ul className="mt-6 grid gap-3 lg:grid-cols-2" aria-label="Loading menu" aria-busy="true">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <li key={i} className="flex gap-4 rounded-xl bg-panel p-3">
+                            <div className="size-24 shrink-0 animate-pulse rounded-lg bg-slat sm:size-28" />
+                            <div className="flex flex-1 flex-col justify-center gap-2">
+                                <div className="h-6 w-2/3 animate-pulse rounded-sm bg-slat" />
+                                <div className="h-3 w-full animate-pulse rounded-sm bg-slat" />
+                                <div className="h-4 w-16 animate-pulse rounded-sm bg-slat" />
+                            </div>
                         </li>
                     ))}
                 </ul>
             ) : loadError ? (
-                <div className="mt-10 rounded-2xl border bg-card p-8 text-center">
-                    <h2 className="text-lg font-medium">The menu didn’t load</h2>
-                    <p className="mt-1 text-muted-foreground">Check your connection, then try again.</p>
-                    <button type="button" onClick={() => location.reload()} className="mt-4 rounded-full bg-primary px-5 py-2.5 text-primary-foreground">
+                <div className="mt-10 rounded-xl bg-panel p-8 text-center">
+                    <h2 className="display text-[2rem]">The menu didn’t load</h2>
+                    <p className="mt-2 text-muted-foreground">Check your connection, then try again.</p>
+                    <button type="button" onClick={() => location.reload()} className={`${boardButtonPrimary} mt-6`}>
                         Try again
                     </button>
                 </div>
             ) : filteredProducts.length === 0 ? (
-                <div className="mt-10 rounded-2xl border border-dashed p-10 text-center">
-                    <h2 className="text-lg font-medium">No drinks match “{searchQuery}”</h2>
-                    <p className="mt-1 text-muted-foreground">Try another word, or pick a different category.</p>
-                    <button type="button" onClick={() => { setSearchQuery(''); setActiveCategory(null); }} className="mt-4 text-sm font-medium text-roast underline underline-offset-4">
-                        Clear search
-                    </button>
+                <div className="mt-10 rounded-xl border-2 border-dashed border-slat p-10 text-center">
+                    {products.length === 0 ? (
+                        <>
+                            <h2 className="display text-[2rem]">The bar is still setting up</h2>
+                            <p className="mt-2 text-muted-foreground">No drinks are on the menu yet. Check back soon.</p>
+                        </>
+                    ) : (
+                        <>
+                            <h2 className="display text-[2rem]">
+                                {searchQuery ? `No drinks match “${searchQuery}”` : 'Nothing in this category yet'}
+                            </h2>
+                            <p className="mt-2 text-muted-foreground">Try another word, or pick a different category.</p>
+                            <button
+                                type="button"
+                                onClick={() => { setSearchQuery(''); setActiveCategory(null); }}
+                                className="mt-4 inline-flex min-h-11 items-center font-bold text-signal underline underline-offset-4"
+                            >
+                                Show all drinks
+                            </button>
+                        </>
+                    )}
                 </div>
             ) : (
-                <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">
+                <ul className="mt-6 grid gap-3 lg:grid-cols-2">
                     {filteredProducts.map((product) => (
                         <li key={product._id as string}>
                             <ProductCard product={product} onOpen={openProduct} onQuickAdd={quickAdd} />

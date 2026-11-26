@@ -32,7 +32,7 @@ function ChoiceGroup({
 }) {
     return (
         <fieldset className="space-y-2.5">
-            <legend className="font-medium">{legend}</legend>
+            <legend className="display text-[1.375rem]">{legend}</legend>
             <RadioGroup value={value} onValueChange={onChange} className="flex flex-wrap gap-2" aria-label={legend}>
                 {options.map((o) => {
                     const id = `${name}-${o.value}`;
@@ -42,13 +42,13 @@ function ChoiceGroup({
                             key={o.value}
                             htmlFor={id}
                             className={cn(
-                                'flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border px-4 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring',
-                                active ? 'border-primary bg-primary text-primary-foreground' : 'bg-card hover:bg-muted'
+                                'flex min-h-11 cursor-pointer items-center gap-1.5 rounded-sm px-4 text-base transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring',
+                                active ? 'bg-signal font-bold text-roast' : 'bg-slat text-foreground/85 hover:text-foreground'
                             )}
                         >
                             <span className="sr-only"><RadioGroupItem value={o.value} id={id} /></span>
                             {o.label}
-                            {o.hint && <span className={active ? 'opacity-80' : 'text-muted-foreground'}>{o.hint}</span>}
+                            {o.hint && <span className={active ? 'font-normal opacity-80' : 'text-muted-foreground'}>{o.hint}</span>}
                         </label>
                     );
                 })}
@@ -93,18 +93,18 @@ export default function ProductModal({ product, open, onOpenChange }: ProductMod
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className="flex max-h-[92dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg max-sm:top-auto max-sm:bottom-0 max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-b-none max-sm:rounded-t-3xl data-open:max-sm:slide-in-from-bottom-10 data-open:max-sm:zoom-in-100"
+                className="flex max-h-[92dvh] flex-col gap-0 overflow-hidden rounded-xl border-0 bg-panel p-0 sm:max-w-lg max-sm:top-auto max-sm:bottom-0 max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-b-none max-sm:rounded-t-2xl data-open:max-sm:slide-in-from-bottom-10 data-open:max-sm:zoom-in-100"
             >
                 <div className="overflow-y-auto overscroll-contain">
                     {imgOk && (
-                        <div className="relative aspect-[16/9] w-full bg-muted">
+                        <div className="relative aspect-[16/9] w-full bg-slat">
                             <Image src={product.imageUrl} alt="" fill sizes="512px" className="object-cover" onError={() => setImgOk(false)} />
                         </div>
                     )}
 
                     <div className="space-y-6 p-5">
                         <div className="space-y-1 pr-6">
-                            <DialogTitle className="display text-2xl font-semibold">{product.name}</DialogTitle>
+                            <DialogTitle className="display text-[2.5rem] leading-none">{product.name}</DialogTitle>
                             <DialogDescription className="text-base text-muted-foreground">{product.description}</DialogDescription>
                         </div>
 
@@ -126,14 +126,15 @@ export default function ProductModal({ product, open, onOpenChange }: ProductMod
 
                         {o.addOns.length > 0 && (
                             <fieldset className="space-y-2.5">
-                                <legend className="font-medium">Add-ons</legend>
-                                <div className="divide-y rounded-2xl border bg-card">
+                                <legend className="display text-[1.375rem]">Add-ons</legend>
+                                <div className="divide-y divide-roast/60 overflow-hidden rounded-lg bg-slat">
                                     {o.addOns.map((addOn) => {
                                         const id = `addon-${addOn.label}`;
                                         return (
-                                            <label key={addOn.label} htmlFor={id} className="flex min-h-12 cursor-pointer items-center gap-3 px-4">
+                                            <label key={addOn.label} htmlFor={id} className="flex min-h-12 cursor-pointer items-center gap-3 px-4 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-inset has-[:focus-visible]:ring-ring">
                                                 <Checkbox
                                                     id={id}
+                                                    className="size-5 rounded-sm border-dust"
                                                     checked={selectedAddOns.includes(addOn.label)}
                                                     onCheckedChange={(checked) =>
                                                         setSelectedAddOns(checked ? [...selectedAddOns, addOn.label] : selectedAddOns.filter((a) => a !== addOn.label))
@@ -150,20 +151,20 @@ export default function ProductModal({ product, open, onOpenChange }: ProductMod
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3 border-t bg-background p-4 safe-bottom">
-                    <div className="flex items-center rounded-full border" role="group" aria-label="Quantity">
-                        <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="flex size-11 items-center justify-center rounded-full disabled:opacity-40" disabled={quantity === 1} aria-label="One less">
+                <div className="flex items-center gap-3 bg-roast/60 p-4 safe-bottom">
+                    <div className="flex items-center rounded-sm bg-slat" role="group" aria-label="Quantity">
+                        <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="flex size-11 items-center justify-center rounded-sm disabled:opacity-40" disabled={quantity === 1} aria-label="One less">
                             <Minus className="size-4" aria-hidden="true" />
                         </button>
-                        <span className="w-6 text-center tabular-nums" aria-live="polite">{quantity}</span>
-                        <button type="button" onClick={() => setQuantity((q) => q + 1)} className="flex size-11 items-center justify-center rounded-full" aria-label="One more">
+                        <span className="w-6 text-center font-bold tabular-nums" aria-live="polite">{quantity}</span>
+                        <button type="button" onClick={() => setQuantity((q) => q + 1)} className="flex size-11 items-center justify-center rounded-sm" aria-label="One more">
                             <Plus className="size-4" aria-hidden="true" />
                         </button>
                     </div>
                     <button
                         type="button"
                         onClick={handleAddToCart}
-                        className="flex h-12 flex-1 items-center justify-between rounded-full bg-primary px-5 font-medium text-primary-foreground transition-transform active:scale-[0.98]"
+                        className="display flex min-h-[52px] flex-1 items-center justify-between rounded-sm bg-signal px-5 text-[1.375rem] tracking-[0.02em] text-roast transition-colors hover:bg-[#ffc457] active:scale-[0.98]"
                     >
                         <span>Add to order</span>
                         <span className="tabular-nums">${(unitPrice * quantity).toFixed(2)}</span>

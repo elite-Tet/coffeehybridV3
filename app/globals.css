@@ -181,7 +181,9 @@
   img, video {
     max-inline-size: 100%;
   }
-  :where(button, [role="button"], input:not([type="checkbox"], [type="radio"]), select, textarea) {
+  /* Minimum tap height for controls. Checkbox/radio controls are excluded (Radix renders them as
+     <button>s): their wrapping <label> rows provide the target, and stretching them distorts the box. */
+  :where(button:not([role="checkbox"], [role="radio"]), [role="button"], input:not([type="checkbox"], [type="radio"]), select, textarea) {
     min-block-size: var(--target-size);
   }
   :focus-visible {
