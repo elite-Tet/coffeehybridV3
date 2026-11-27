@@ -2,9 +2,11 @@
   "name": "coffeehybrid",
   "version": "0.1.0",
   "private": true,
+  "description": "Order-ahead coffee app: menu, checkout, QR pickup tickets, live staff board and admin, built with Next.js 16.",
+  "engines": {
+    "node": ">=20.9"
+  },
   "scripts": {
-    "cleanup": "lsof -t -i:3000 | xargs kill -9 || true",
-    "predev": "npm run cleanup",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -40,18 +42,13 @@
   "devDependencies": {
     "@playwright/test": "1.65.1",
     "@tailwindcss/postcss": "^4",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",
-    "@vitejs/plugin-react": "^6.0.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.7",
-    "eslint-plugin-import": "^2.32.0",
-    "jsdom": "^29.0.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.0"
