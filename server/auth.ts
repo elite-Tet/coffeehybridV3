@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import dbConnect from "./db";
 import User from "@/server/models/User"; 
+import { findOrCreateGoogleUser } from "./google-user";
 import { Role } from "@/types";
 
 // Type augmentation for NextAuth v5
@@ -94,6 +95,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         })
     ],
     callbacks: {
+        // Accounts are matched by email, so only accept addresses Google has verified.
+        signIn({ account, profile }) {
+            return account?.provider !== 'google' || profile?.email_verified === true;
+        },
         async session({ session, token }) {
             if (session.user) {
                 session.user.id = token.sub || (token.id as string) || '1';
@@ -103,12 +108,22 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             }
             return session;
         },
-        async jwt({ token, user, trigger }) {
+        async jwt({ token, user, account, trigger }) {
             if (user) {
                 token.id = user.id;
                 token.role = user.role || 'customer';
                 token.strikes = user.strikes || 0;
                 token.suspendedUntil = user.suspendedUntil || null;
+            }
+
+            // Google's user object has no database record behind it. Swap in ours, so
+            // orders, roles and strikes work the same as for email sign-in.
+            if (account?.provider === 'google' && user?.email) {
+                const dbUser = await findOrCreateGoogleUser({ email: user.email, name: user.name, image: user.image });
+                token.id = token.sub = dbUser!._id.toString();
+                token.role = dbUser!.role;
+                token.strikes = dbUser!.strikes || 0;
+                token.suspendedUntil = dbUser!.suspendedUntil || null;
             }
             
             // session.update() can be called from the browser, so never trust its payload:
