@@ -11,7 +11,7 @@ import { defineConfig, devices } from '@playwright/test';
  * without them those tests are skipped, the rest still run.
  */
 export default defineConfig({
-    testDir: './e2e',
+    testDir: './tests/e2e',
     timeout: 60_000,
     fullyParallel: false, // tests share one database; keep them predictable
     reporter: [['list']],

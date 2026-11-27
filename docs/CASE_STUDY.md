@@ -131,5 +131,5 @@ _Follow-ups already shipped after the main rebuild: the scanner restart fix, the
 - Audit and before screenshots: [`docs/AUDIT.md`](AUDIT.md), [`docs/before/`](before/)
 - Mockups: [`docs/mockups/index.html`](mockups/index.html)
 - After screenshots: [`docs/after/`](after/), comparisons in [`docs/compare/`](compare/)
-- Tests: [`__tests__/`](../__tests__/), [`e2e/`](../e2e/)
+- Tests: [`tests/unit/`](../tests/unit/), [`tests/e2e/`](../tests/e2e/)
 - Onboarding: [`docs/ONBOARDING.md`](ONBOARDING.md)

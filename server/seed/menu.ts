@@ -1,9 +1,11 @@
+import 'server-only';
+
 /**
- * Mock data for testing when MongoDB is not available
- * This allows testing the frontend functionality without database dependency
+ * Sample menu for a fresh database. Loaded by the admin-only seed endpoint
+ * (POST /api/admin/seed), which upserts these products and their categories by name.
  */
 
-export const mockProducts = [
+export const seedProducts = [
   {
     _id: '1',
     name: 'Espresso',
@@ -192,10 +194,4 @@ export const mockProducts = [
         addOns: [{ label: 'Soy Milk', price: 0.60 }, { label: 'Oat Milk', price: 0.60 }]
     }
 }
-];
-
-export const mockCategories = [
-  { _id: 'cat1', name: 'Hot Coffee', description: 'Steaming hot coffee beverages', slug: 'hot-coffee', sortOrder: 1, isActive: true, createdAt: new Date(), updatedAt: new Date() },
-  { _id: 'cat2', name: 'Cold Coffee', description: 'Refreshing iced coffee drinks', slug: 'cold-coffee', sortOrder: 2, isActive: true, createdAt: new Date(), updatedAt: new Date() },
-  { _id: 'cat3', name: 'Pastries', description: 'Freshly baked goods', slug: 'pastries', sortOrder: 3, isActive: true, createdAt: new Date(), updatedAt: new Date() }
 ];
