@@ -8,7 +8,7 @@ Redesigned and hardened an order-ahead coffee app: new visual direction chosen f
 **Role · Stack · Timeline**
 Design + front-end + back-end fixes · Next.js 16, React 19, TypeScript, Tailwind v4, Auth.js, MongoDB, Playwright · _(fill in dates)_
 
-**Hero image:** [`docs/compare/home-desktop.png`](compare/home-desktop.png)
+**Hero image:** [`home-desktop.png`](screenshots/compare/home-desktop.png)
 
 ---
 
@@ -29,7 +29,7 @@ Design + front-end + back-end fixes · Next.js 16, React 19, TypeScript, Tailwin
 
 ## 2. Audit: what was really there
 
-Method: inspected the repo, ran every check, and captured all 13 routes at desktop and phone width with Playwright, for both the March version and the unfinished redesign ([`docs/AUDIT.md`](AUDIT.md), [`docs/before/`](before/)).
+Method: inspected the repo, ran every check, and captured all 13 routes at desktop and phone width with Playwright, for both the March version and the unfinished redesign ([audit report](audit/AUDIT.md), [before screenshots](screenshots/before/)).
 
 **Findings worth telling:**
 - **Security.** Anyone who registered with "admin" in their email became an admin. An unauthenticated GET wrote to the database. _(Later, during the rebuild, I found four more: open product/category creation endpoints, a client-side role escalation via session updates, hard-coded development logins, and an open redirect on login.)_
@@ -38,7 +38,7 @@ Method: inspected the repo, ran every check, and captured all 13 routes at deskt
 - **Dead weight.** 11 unused modules, 6 unused npm packages.
 - **Journeys.** The core order flow was usable but rough on phones: jargon ("Execute order", "Manifest verification"), an overflowing pickup ticket, and a countdown that looked like an empty circle.
 
-**Image:** [`docs/compare/order-ticket-mobile.png`](compare/order-ticket-mobile.png) (March → unfinished redesign → final)
+**Image:** [`order-ticket-mobile.png`](screenshots/compare/order-ticket-mobile.png) (March → unfinished redesign → final)
 
 > 🖊 _What surprised you most? The silent lint failure is a good story about not trusting a green checkmark._
 
@@ -107,7 +107,7 @@ lib/         framework-free helpers + zod schemas
 - "No Sugar sugar" and "Hot Ice": a label-building helper, now fixed in one place and covered by unit tests.
 - Staff can type the 4-character ticket code when the camera can't scan, using the same code the customer sees.
 
-**Images:** [`docs/before/`](before/) vs [`docs/after/`](after/) (same file names), [`docs/compare/`](compare/)
+**Images:** [before](screenshots/before/) vs [after](screenshots/after/) (same file names), [side by side](screenshots/compare/)
 
 > 🖊 _Pick 3 before/after pairs for the page: home (desktop), order ticket (phone), menu (phone)._
 
@@ -128,8 +128,8 @@ _Follow-ups already shipped after the main rebuild: the scanner restart fix, the
 ---
 
 ### Evidence index
-- Audit and before screenshots: [`docs/AUDIT.md`](AUDIT.md), [`docs/before/`](before/)
+- Audit and before screenshots: [audit report](audit/AUDIT.md), [before](screenshots/before/), [unfinished redesign](screenshots/before-unfinished-redesign/)
 - Mockups: [`docs/mockups/index.html`](mockups/index.html)
-- After screenshots: [`docs/after/`](after/), comparisons in [`docs/compare/`](compare/)
+- After screenshots: [after](screenshots/after/), comparisons in [compare](screenshots/compare/)
 - Tests: [`tests/unit/`](../tests/unit/), [`tests/e2e/`](../tests/e2e/)
 - Onboarding: [`docs/ONBOARDING.md`](ONBOARDING.md)

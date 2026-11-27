@@ -9,7 +9,7 @@ There are two states of the code, and both were audited:
 | **committed** | Last commit `8362a18` (2026-03-20), dark "Order Ahead, Skip the Queue" UI | Separate git worktree, `next build && next start` on :3002 |
 | **wip** | Your current working tree: an uncommitted, half-done light/cream redesign (18 modified files, ~1.3k lines changed, 15 new files) | `next build && next start` on :3001 |
 
-Screenshots are in `docs/before/{committed,wip}/{desktop,mobile}/<route>.png`. That's 13 routes × 2 viewports × 2 states (desktop is 1440×900 and mobile is 390×844), all full-page. A scripted mobile order journey is in `docs/before/<state>/journey/`. Raw console, network and link data is in [`before/console-and-links.md`](before/console-and-links.md).
+Screenshots are in [`docs/screenshots/before/`](../screenshots/before/) (committed) and [`before-unfinished-redesign/`](../screenshots/before-unfinished-redesign/) (WIP), each with `desktop/` and `mobile/<route>.png`. That's 13 routes × 2 viewports × 2 states (desktop is 1440×900 and mobile is 390×844), all full-page. A scripted mobile order journey is in each folder’s `journey/`. Raw console, network and link data is in [`console-and-links.md`](console-and-links.md).
 
 ---
 
@@ -187,7 +187,7 @@ Test coverage is two model tests only. There are no API, component or e2e tests.
 14. **Repo-root clutter:** `README.bak.md`, `REDESIGN_*.md` and `STITCH_*.md` are design notes that belong in `docs/`. `tsconfig.tsbuildinfo` is committed.
 15. **Hard-coded design values:** the committed state uses ad-hoc oranges and uppercase tracking classes everywhere. The WIP moved most of these to tokens in `globals.css`, which is the right direction.
 
-### Accessibility (automated counts per page; see console-and-links.md)
+### Accessibility (automated counts per page; see [console-and-links.md](console-and-links.md))
 - **Small tap targets (<24 px):** committed has 9–13 per page; WIP has 4–6 on customer pages and 0 on admin.
 - **Unnamed buttons/links:** admin/products has 17–19 icon-only buttons (edit/delete) with no `aria-label`. The committed navbar/footer adds 2 per page.
 - **No horizontal page scroll** at 390 px in either state. On WIP order detail, though, the overflow is clipped rather than fixed.
