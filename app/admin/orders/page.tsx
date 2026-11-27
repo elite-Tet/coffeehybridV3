@@ -1,30 +1,25 @@
-// FIX: Removed unused imports, added missing AnimatePresence and Download
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Download, Loader2, Search } from 'lucide-react';
 import { IOrder, IUser, OrderStatus } from '@/types';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-    Clock,
-    XCircle,
-    CheckCircle,
-    RotateCcw,
-    Loader2,
-    Search,
-    Calendar,
-    User,
-    Download
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
+import StatusChip from '@/features/orders/StatusChip';
+import { ORDER_STATUS, orderCode } from '@/features/orders/order-status';
+import { downloadCsv, ordersToCsv } from '@/features/admin/orders-csv';
+import { adminField, adminOutlineButton, adminPanel } from '@/features/admin/admin-styles';
+import { cn } from '@/lib/utils';
+
+const FILTERS: Array<'all' | OrderStatus> = ['all', 'completed', 'pending', 'expired'];
+
+function itemName(item: IOrder['items'][number]) {
+    return typeof item.product === 'object' && item.product && 'name' in item.product ? item.product.name : 'Item';
+}
 
 export default function OrderHistory() {
     const [orders, setOrders] = useState<IOrder[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState<'all' | OrderStatus>('all');
 
     useEffect(() => {
         async function fetchOrders() {
@@ -41,158 +36,122 @@ export default function OrderHistory() {
         fetchOrders();
     }, []);
 
-    // FIX: Replaced 'any' with proper IUser type
+    const query = searchQuery.trim().toLowerCase();
     const filtered = orders.filter(o => {
         const user = o.user as IUser;
-        const matchesSearch = o._id.toString().includes(searchQuery) ||
-            user?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user?.email?.toLowerCase().includes(searchQuery.toLowerCase());
+        const id = o._id.toString();
+        const matchesSearch = !query ||
+            id.includes(query) ||
+            orderCode(id).toLowerCase().includes(query) ||
+            user?.name?.toLowerCase().includes(query) ||
+            user?.email?.toLowerCase().includes(query);
         const matchesStatus = statusFilter === 'all' || o.status === statusFilter;
         return matchesSearch && matchesStatus;
     });
 
-    // FIX: Replaced 'any' with proper type definition
-    type StatusMapEntry = {
-        label: string;
-        icon: React.ComponentType<{ className?: string }>;
-        color: string;
-    };
-
-    const statusMap: Record<OrderStatus, StatusMapEntry> = {
-        pending: { label: 'Pending', icon: Clock, color: 'bg-muted border-border/40 text-muted-foreground' },
-        confirmed: { label: 'Confirmed', icon: RotateCcw, color: 'bg-st-brewing/10 border-st-brewing/20 text-st-brewing' },
-        ready: { label: 'Ready', icon: CheckCircle, color: 'bg-st-ready/10 border-st-ready/20 text-st-ready' },
-        completed: { label: 'Completed', icon: CheckCircle, color: 'bg-primary/10 border-primary/20 text-primary' },
-        expired: { label: 'Expired', icon: XCircle, color: 'bg-destructive/10 border-destructive/20 text-destructive' },
-        cancelled: { label: 'Cancelled', icon: XCircle, color: 'bg-destructive/10 border-destructive/20 text-destructive' },
+    const exportCsv = () => {
+        downloadCsv(ordersToCsv(filtered), `orders-${new Date().toISOString().slice(0, 10)}.csv`);
     };
 
     if (loading) {
         return (
-            <div className="flex h-[70vh] flex-col items-center justify-center gap-4">
-                <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                <p className="text-muted-foreground animate-pulse font-bold uppercase tracking-widest text-[10px]">Retrieving Order Ledger...</p>
+            <div className="flex h-[60vh] items-center justify-center" role="status">
+                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                <span className="sr-only">Loading orders</span>
             </div>
         );
     }
 
     return (
-        <div className="max-w-[1600px] mx-auto space-y-12 pb-20">
-            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+        <div className="mx-auto max-w-6xl">
+            <header className="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                    <h1 className="text-4xl font-black tracking-tighter uppercase">Order <span className="text-primary italic">Archive</span></h1>
-                    <p className="text-muted-foreground font-medium text-sm">Reviewing historical transactions and user interactions.</p>
+                    <h1 className="display text-section">All orders</h1>
+                    <p className="mt-2 text-muted-foreground" aria-live="polite">
+                        Showing {filtered.length} of {orders.length}.
+                    </p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" className="h-12 rounded-2xl gap-2 font-bold px-6 shadow-xl hover:bg-primary/10">
-                        <Download className="w-4 h-4" />
-                        Export Ledger
-                    </Button>
-                </div>
+                <button type="button" onClick={exportCsv} disabled={filtered.length === 0} className={cn(adminOutlineButton, 'disabled:opacity-50')}>
+                    <Download className="size-4" aria-hidden="true" />
+                    Export CSV
+                </button>
             </header>
 
-            <div className="flex flex-col lg:flex-row gap-6">
+            <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:items-center">
                 <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search by Order ID or Identity..."
-                        className="pl-12 h-14 bg-card/40 border-border/60 rounded-2xl font-medium"
+                    <label htmlFor="order-search" className="sr-only">Search orders</label>
+                    <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                    <input
+                        id="order-search"
+                        type="search"
+                        placeholder="Search by code, name or email"
+                        className={cn(adminField, 'pl-9')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <div className="flex gap-2">
-                    {['all', 'completed', 'pending', 'expired'].map((filter) => (
-                        <Button
-                            key={filter}
-                            variant={statusFilter === filter ? 'default' : 'outline'}
-                            onClick={() => setStatusFilter(filter)}
-                            className={`h-14 px-6 rounded-2xl font-black uppercase tracking-widest text-[10px] ${statusFilter === filter ? 'shadow-xl shadow-primary/20' : 'bg-card/40'}`}
-                        >
-                            {filter}
-                        </Button>
-                    ))}
+                <div role="group" aria-label="Filter by status" className="flex flex-wrap gap-1.5">
+                    {FILTERS.map((filter) => {
+                        const active = statusFilter === filter;
+                        return (
+                            <button
+                                key={filter}
+                                type="button"
+                                aria-pressed={active}
+                                onClick={() => setStatusFilter(filter)}
+                                className={cn(
+                                    'inline-flex min-h-11 items-center rounded-sm px-4 font-bold transition-colors',
+                                    active ? 'bg-foreground text-roast' : 'bg-panel text-muted-foreground hover:text-foreground'
+                                )}
+                            >
+                                {filter === 'all' ? 'All' : ORDER_STATUS[filter].label}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
-            <div className="space-y-4">
-                <AnimatePresence mode="popLayout">
+            {filtered.length === 0 ? (
+                <p className="mt-6 rounded-xl border-2 border-dashed border-slat px-4 py-10 text-center text-muted-foreground">
+                    {orders.length === 0 ? 'No orders yet.' : 'No orders match these filters.'}
+                </p>
+            ) : (
+                <ul className={cn(adminPanel, 'mt-6 space-y-1.5 p-3')}>
                     {filtered.map((order) => {
-                        const style = statusMap[order.status];
+                        const id = order._id.toString();
+                        const user = order.user as IUser;
+                        const placed = new Date(order.createdAt);
+                        const when = (
+                            <time dateTime={placed.toISOString()}>
+                                {placed.toLocaleDateString([], { month: 'short', day: 'numeric' })},{' '}
+                                {placed.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                            </time>
+                        );
                         return (
-                            <motion.div
-                                key={order._id.toString()}
-                                layout
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.98 }}
-                            >
-                                <Card className="bg-card/40 backdrop-blur-md border border-border/40 hover:border-primary/40 transition-all duration-300 group overflow-hidden">
-                                    <div className="p-6 md:p-8 flex flex-col md:flex-row gap-8 items-start md:items-center">
-                                        {/* Status & ID */}
-                                        <div className="flex flex-col gap-3 min-w-[200px]">
-                                            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest ${style.color}`}>
-                                                <style.icon className="w-3.5 h-3.5" />
-                                                {style.label}
-                                            </div>
-                                            <div className="space-y-1">
-                                                <p className="text-[10px] font-black uppercase text-muted-foreground">Sequence Unit</p>
-                                                <p className="font-mono text-xs font-bold tracking-widest uppercase">#{order._id.toString().slice(-12).toUpperCase()}</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="w-px h-12 bg-border/20 hidden md:block" />
-
-                                        {/* User Identity */}
-                                        <div className="flex-1 space-y-4">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-2xl bg-muted/30 flex items-center justify-center text-muted-foreground">
-                                                    <User className="w-5 h-5" />
-                                                </div>
-                                                <div>
-                                                    {/* FIX: Replaced 'any' with IUser type */}
-                                                    <p className="font-black text-sm tracking-tight capitalize">{(order.user as IUser)?.name || 'Incognito Guest'}</p>
-                                                    <p className="text-[10px] text-muted-foreground font-medium">{(order.user as IUser)?.email || 'Anonymous Session'}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-wrap gap-2 pt-1">
-                                                {/* FIX: Added proper type guard to check if product is IProduct */}
-                                                {order.items.map((item, idx: number) => {
-                                                    const product = typeof item.product === 'object' && item.product && 'name' in item.product ? item.product : null;
-                                                    return (
-                                                        <Badge key={idx} variant="outline" className="bg-muted/10 border-border/20 text-[8px] font-black uppercase tracking-tighter">
-                                                            {item.quantity}x {product?.name || 'Unit'}
-                                                        </Badge>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-
-                                        <div className="w-px h-12 bg-border/20 hidden md:block" />
-
-                                        {/* Temporal & Value */}
-                                        <div className="flex flex-col md:text-right gap-4 min-w-[150px]">
-                                            <div className="space-y-0.5">
-                                                <div className="flex md:justify-end items-center gap-2 text-muted-foreground">
-                                                    <Calendar className="w-3.5 h-3.5" />
-                                                    <span className="text-[10px] font-black uppercase tracking-widest">{new Date(order.createdAt).toLocaleDateString()}</span>
-                                                </div>
-                                                <div className="flex md:justify-end items-center gap-2 text-muted-foreground">
-                                                    <Clock className="w-3.5 h-3.5" />
-                                                    <span className="text-[10px] font-black tracking-widest">{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                </div>
-                                            </div>
-                                            <div className="text-3xl font-black text-primary tracking-tighter italic">
-                                                ${order.total.toFixed(2)}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Card>
-                            </motion.div>
+                            <li key={id} className="grid grid-cols-[4.75rem_1fr_auto] items-start gap-x-4 gap-y-2 rounded-sm bg-slat px-4 py-3 md:grid-cols-[5.5rem_1fr_auto_auto] md:items-center">
+                                <p className="ticket-number text-[2rem]" title={id}>
+                                    <span className="sr-only">Order </span>{orderCode(id)}
+                                </p>
+                                <div className="min-w-0">
+                                    <p className="font-bold">{user?.name || 'Guest'}</p>
+                                    {user?.email && <p className="truncate text-sm text-muted-foreground">{user.email}</p>}
+                                    <p className="mt-1 text-sm">
+                                        {order.items.map((item) => `${item.quantity} × ${itemName(item)}`).join(', ')}
+                                    </p>
+                                </div>
+                                <div className="text-right md:order-last">
+                                    <p className="font-bold tabular-nums">${order.total.toFixed(2)}</p>
+                                    <p className="hidden text-sm text-muted-foreground md:block">{when}</p>
+                                </div>
+                                <div className="col-span-2 col-start-2 flex flex-wrap items-center gap-x-3 gap-y-1 md:col-span-1 md:col-start-auto">
+                                    <StatusChip status={order.status} className="whitespace-nowrap" />
+                                    <span className="text-sm text-muted-foreground md:hidden">{when}</span>
+                                </div>
+                            </li>
                         );
                     })}
-                </AnimatePresence>
-            </div>
+                </ul>
+            )}
         </div>
     );
 }
