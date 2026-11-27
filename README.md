@@ -4,7 +4,7 @@
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js) ![React](https://img.shields.io/badge/React-19-149eca?logo=react) ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38b2ac?logo=tailwind-css) ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47a248?logo=mongodb) ![WCAG 2.2 AA](https://img.shields.io/badge/axe-WCAG_2.2_AA_clean-ffb224)
 
-![Homepage before and after the redesign](docs/compare/home-desktop.png)
+![Homepage before and after the redesign](docs/screenshots/compare/home-desktop.png)
 
 ## What it does
 
@@ -63,11 +63,11 @@ docs/         audit, mockups, screenshots, onboarding, case study
 
 ## The redesign
 
-This repo went through an audit → three mockups → a 12-slice rebuild:
+This repo went through an audit → three mockups → a 12-slice rebuild. Everything is indexed in [docs/README.md](docs/README.md):
 
-- [Audit](docs/AUDIT.md) with [before screenshots](docs/before/)
+- [Audit](docs/audit/AUDIT.md) with [before screenshots](docs/screenshots/before/)
 - [Mockups](docs/mockups/index.html): three directions, Direction C ("The Board") chosen
-- [After screenshots](docs/after/) and [side-by-side comparisons](docs/compare/)
+- [After screenshots](docs/screenshots/after/) and [side-by-side comparisons](docs/screenshots/compare/)
 - [Case study outline](docs/CASE_STUDY.md)
 - [Onboarding guide](docs/ONBOARDING.md)
 

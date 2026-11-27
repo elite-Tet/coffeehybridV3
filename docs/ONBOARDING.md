@@ -103,7 +103,7 @@ proxy.ts        page-level auth and role gate (Next 16's name for middleware)
 2. **Customer flows** need a signed-in customer and something in the cart: `/menu` → add a drink → `/checkout` → *Place order* → the ticket at `/order/[id]`.
 3. **Staff flows** need an admin or staff account: `/staff` shows the queue. To test pickup without a camera, use *Camera not working?* on `/staff/scan` and type the 4-character code from the customer's ticket.
 4. **Before you call it done:** `npm run build && npm run test:e2e`. The accessibility spec runs axe-core (WCAG 2.2 AA) on every route, and any violation fails the test.
-5. **Visual comparison:** `docs/before/` (the March version and the unfinished cream redesign) vs `docs/after/` (this version), same file names. `docs/compare/` has side-by-side images.
+5. **Visual comparison:** `docs/screenshots/before/` (March version) and `before-unfinished-redesign/` vs `docs/screenshots/after/` (this version), same file names. `docs/screenshots/compare/` has side-by-side images.
 
 ---
 
@@ -122,7 +122,7 @@ Each step was one reviewable commit with lint, type-check, tests and build passi
 12. Browser tests, after screenshots, these docs
 
 **Suggested next steps, in this order:**
-_Done since the first version of this list: the scanner now pauses and resumes instead of tearing the camera down, size options are editable in the admin product dialog, and the staff/admin screens use the board layout (`docs/after/staff-admin/` has their own before/after)._
+_Done since the first version of this list: the scanner now pauses and resumes instead of tearing the camera down, size options are editable in the admin product dialog, and the staff/admin screens use the board layout._
 
 1. **Test the scanner on a real phone:** scan → *Next customer* → scan again. Headless tests can't drive a camera.
 2. **Move the fork out of the old repo's folder.** Next.js warns that it picked the outer folder as the project root because there are two lockfiles. Or set `outputFileTracingRoot` in `next.config.ts`.
