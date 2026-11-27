@@ -27,7 +27,12 @@ test.describe('signed in', () => {
     test.skip(({ isMobile }) => isMobile, 'places a real order; run once (desktop)');
 
     test('place an order, see the ticket, staff picks it up by typed code', async ({ page, browser }) => {
-        await signIn(page, accounts.customer!);
+        // A fresh customer every run: a shared test account eventually collects missed-pickup
+        // strikes (3 → ordering paused for 24h), which is the app working as designed.
+        const email = `e2e-${Date.now()}@example.test`;
+        const res = await page.request.post('/api/auth/register', { data: { name: 'E2E Customer', email, password: accounts.password } });
+        expect(res.status(), 'register throwaway customer').toBe(201);
+        await signIn(page, email);
         await page.goto('/menu');
         await page.getByRole('button', { name: 'Add Americano with default options' }).click();
         await page.goto('/checkout');

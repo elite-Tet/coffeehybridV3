@@ -98,7 +98,7 @@ lib/         framework-free helpers + zod schemas
 | axe WCAG 2.2 AA violations | 3 rules failing across 14+ pages | **0 on all 13 routes** |
 | Unnamed buttons (admin products page) | up to 19 | **0** |
 | Unused npm packages | 6 | **0** |
-| Automated tests | 6 unit | **15 unit + 18 browser tests**, each run on desktop and phone |
+| Automated tests | 6 unit | **18 unit + 18 browser tests**, each run on desktop and phone |
 | Product photos matching their drink | 4 of 8 loaded, none matched | **8 of 8** |
 
 **Fixes that make good one-liners:**
@@ -116,8 +116,10 @@ lib/         framework-free helpers + zod schemas
 ## 6. Next
 
 What I'd do with more time, and why each matters:
-1. **Camera restart after a scan.** It needs real-device testing, so I flagged it rather than changing it blind.
-2. **Staff/admin visual pass.** They use the new palette but not yet the board layout, and they're the screens a café uses all day.
+_Follow-ups already shipped after the main rebuild: the scanner restart fix, the staff/admin board layout (with editable size options and a working CSV export), and removing `framer-motion` once nothing used it._
+
+1. **Real-device scanner testing.** The restart fix is in, but a camera can't be verified headless.
+2. **A live strike-system story.** During testing, a shared test account really did hit 3 missed pickups and was paused for 24 hours. It's a good real-world proof of the rule, and the reason the e2e journey now uses a fresh account each run.
 3. **CI.** Run the checks on every push, and the browser tests against preview deployments.
 4. **Real photography and copy review** with an actual café.
 
