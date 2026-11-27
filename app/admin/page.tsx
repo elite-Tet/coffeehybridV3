@@ -1,45 +1,45 @@
-// FIX: Removed unused motion and AlertCircle imports
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-    BarChart3,
-    TrendingUp,
-    ShoppingBag,
-    DollarSign,
-    Loader2,
-    ArrowUpRight,
-    Clock,
-    CheckCircle,
-    XCircle
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
+import type { OrderStatus } from '@/types';
+import { ORDER_STATUS } from '@/features/orders/order-status';
+import { cn } from '@/lib/utils';
 
-// FIX: Defined proper type for analytics stats instead of 'any'
+/** Shape of GET /api/admin/analytics. */
 interface AnalyticsStats {
     totalOrders: number;
+    /** Sum of completed orders only. */
     totalRevenue: number;
-    completedOrders: number;
-    activeOrders: number;
-    noShowRate: number;
-    activeSuspensions: number;
-    topProducts: Array<{
-        name: string;
-        count: number;
-        revenue: number;
-    }>;
-    statusBreakdown?: {
-        completed?: number;
-        pending?: number;
-        expired?: number;
-        cancelled?: number;
-    };
+    statusBreakdown?: Partial<Record<OrderStatus, number>>;
     categoryBreakdown: Array<{
         categoryId: string;
         name: string;
         count: number;
         revenue: number;
     }>;
+}
+
+const STATUS_ORDER: OrderStatus[] = ['pending', 'confirmed', 'ready', 'completed', 'expired', 'cancelled'];
+
+const money = (n: number) => n.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
+
+function Stat({ label, value, note }: { label: string; value: string; note: string }) {
+    return (
+        <div className="rounded-xl bg-panel p-5 shadow-[inset_0_0_0_1px_rgb(244_234_221/0.06)]">
+            <dt className="text-muted-foreground">{label}</dt>
+            <dd className="ticket-number mt-2 text-[clamp(2.5rem,5vw,3.5rem)]">{value}</dd>
+            <dd className="mt-2 text-sm text-muted-foreground">{note}</dd>
+        </div>
+    );
+}
+
+function Bar({ share, className }: { share: number; className: string }) {
+    return (
+        <div className="h-2 w-full overflow-hidden rounded-sm bg-slat" aria-hidden="true">
+            <div className={cn('h-full rounded-sm', className)} style={{ width: `${Math.round(share * 100)}%` }} />
+        </div>
+    );
 }
 
 export default function AdminDashboard() {
@@ -53,7 +53,7 @@ export default function AdminDashboard() {
                 const data = await res.json();
                 if (data.success) setStats(data.data);
             } catch (err) {
-                console.error("Failed to fetch analytics", err);
+                console.error('Failed to fetch analytics', err);
             } finally {
                 setLoading(false);
             }
@@ -63,137 +63,106 @@ export default function AdminDashboard() {
 
     if (loading) {
         return (
-            <div className="flex h-[70vh] flex-col items-center justify-center gap-4">
-                <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                <p className="text-muted-foreground animate-pulse font-medium uppercase tracking-[0.2em] text-xs">Aggregating Enterprise Data...</p>
+            <div className="flex h-[60vh] items-center justify-center" role="status">
+                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                <span className="sr-only">Loading the overview</span>
             </div>
         );
     }
 
-    // FIX: Replaced 'any' with proper type definition for StatCard
-    interface StatCardProps {
-        title: string;
-        value: string | number;
-        icon: React.ComponentType<{ className?: string }>;
-        description: string;
-        trend?: string;
+    if (!stats) {
+        return (
+            <div className="mx-auto max-w-7xl">
+                <h1 className="display text-section">Overview</h1>
+                <div className="mt-8 rounded-xl bg-panel p-6">
+                    <p className="font-bold">The numbers didn’t load.</p>
+                    <button type="button" onClick={() => location.reload()} className="mt-3 inline-flex min-h-11 items-center font-bold text-signal underline underline-offset-4">
+                        Try again
+                    </button>
+                </div>
+            </div>
+        );
     }
 
-    const StatCard = ({ title, value, icon: Icon, description, trend }: StatCardProps) => (
-        <Card className="bg-card/40 backdrop-blur-md border-border/40 hover:border-primary/40 transition-all duration-500 group">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">{title}</CardTitle>
-                <div className="p-2 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                    <Icon className="w-4 h-4" />
-                </div>
-            </CardHeader>
-            <CardContent>
-                <div className="text-3xl font-black tracking-tighter mb-1">{value}</div>
-                <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold text-st-ready flex items-center gap-0.5 bg-st-ready/10 px-1.5 py-0.5 rounded-full">
-                        <ArrowUpRight className="w-3 h-3" />
-                        {trend}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground font-medium">{description}</span>
-                </div>
-            </CardContent>
-        </Card>
-    );
+    const count = (s: OrderStatus) => stats.statusBreakdown?.[s] ?? 0;
+    const active = count('pending') + count('confirmed') + count('ready');
+    const closed = count('completed') + count('expired');
+    const noShowRate = closed > 0 ? count('expired') / closed : null;
+    const categoryRevenue = stats.categoryBreakdown.reduce((sum, c) => sum + c.revenue, 0);
+    const categories = [...stats.categoryBreakdown].sort((a, b) => b.revenue - a.revenue);
 
     return (
-        <div className="max-w-7xl mx-auto space-y-12 pb-20">
+        <div className="mx-auto max-w-7xl">
             <header>
-                <h1 className="text-4xl font-black tracking-tighter">ANALYTICS <span className="text-primary italic">OVERVIEW</span></h1>
-                <p className="text-muted-foreground font-medium text-sm">Real-time performance metrics for CoffeeHybrid v2.</p>
+                <h1 className="display text-section">Overview</h1>
+                <p className="mt-2 text-muted-foreground">All-time numbers from the order database.</p>
             </header>
 
-            {/* Metrics Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard
-                    title="Total Revenue"
-                    value={`$${stats?.totalRevenue.toFixed(2)}`}
-                    icon={DollarSign}
-                    description="vs last period"
-                    trend="+12.5%"
+            <dl className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <Stat label="Revenue" value={money(stats.totalRevenue)} note="From picked-up orders" />
+                <Stat label="Orders" value={stats.totalOrders.toLocaleString()} note="Every order ever placed" />
+                <Stat label="Active now" value={active.toLocaleString()} note="Received, brewing or ready" />
+                <Stat
+                    label="No-show rate"
+                    value={noShowRate === null ? '–' : `${Math.round(noShowRate * 100)}%`}
+                    note="Expired out of picked up plus expired"
                 />
-                <StatCard
-                    title="Total Orders"
-                    value={stats?.totalOrders ?? 0}
-                    icon={ShoppingBag}
-                    description="historical total"
-                    trend="+8.2%"
-                />
-                <StatCard
-                    title="Efficiency"
-                    value="94.2%"
-                    icon={TrendingUp}
-                    description="fulfillment rate"
-                    trend="+2.1%"
-                />
-                <StatCard
-                    title="Active Sessions"
-                    value="24"
-                    icon={BarChart3}
-                    description="users currently"
-                    trend="+4.8%"
-                />
-            </div>
+            </dl>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                {/* Status Breakthrough */}
-                <Card className="lg:col-span-1 bg-card/40 backdrop-blur-md border-border/40">
-                    <CardHeader>
-                        <CardTitle className="text-lg font-black tracking-tight">Order Distribution</CardTitle>
-                        <CardDescription>Breakdown by current fulfillment state.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        {[
-                            { label: 'Completed', count: stats?.statusBreakdown?.completed || 0, icon: CheckCircle, color: 'text-st-done' },
-                            { label: 'Pending', count: stats?.statusBreakdown?.pending || 0, icon: Clock, color: 'text-st-brewing' },
-                            { label: 'Expired', count: (stats?.statusBreakdown?.expired || 0) + (stats?.statusBreakdown?.cancelled || 0), icon: XCircle, color: 'text-destructive' },
-                        ].map((item) => (
-                            <div key={item.label} className="flex justify-between items-center p-4 rounded-3xl bg-muted/20 border border-border/10">
-                                <div className="flex items-center gap-3">
-                                    <item.icon className={`w-5 h-5 ${item.color}`} />
-                                    <span className="font-bold text-sm">{item.label}</span>
-                                </div>
-                                <span className="text-xl font-black tabular-nums">{item.count}</span>
-                            </div>
-                        ))}
-                    </CardContent>
-                </Card>
+            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                <section aria-labelledby="by-status" className="rounded-xl bg-panel p-5 shadow-[inset_0_0_0_1px_rgb(244_234_221/0.06)]">
+                    <h2 id="by-status" className="display text-[1.75rem] leading-none">Orders by status</h2>
+                    <ul className="mt-5 space-y-4">
+                        {STATUS_ORDER.map((s) => {
+                            const meta = ORDER_STATUS[s];
+                            const n = count(s);
+                            return (
+                                <li key={s} className="space-y-1.5">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className="flex items-center gap-2">
+                                            <span className={cn('size-2.5 rounded-full', meta.dot)} aria-hidden="true" />
+                                            {meta.label}
+                                        </span>
+                                        <span className="font-bold tabular-nums">{n.toLocaleString()}</span>
+                                    </div>
+                                    <Bar share={stats.totalOrders > 0 ? n / stats.totalOrders : 0} className={meta.dot} />
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </section>
 
-                {/* Category Performance */}
-                <Card className="lg:col-span-2 bg-card/40 backdrop-blur-md border-border/40">
-                    <CardHeader>
-                        <CardTitle className="text-lg font-black tracking-tight">Category Performance</CardTitle>
-                        <CardDescription>Sales and revenue breakdown by drink category.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-2">
-                            {/* FIX: Replaced 'any' with inline type definition */}
-                            {stats?.categoryBreakdown.map((cat: { categoryId: string; name: string; count: number; revenue: number }) => (
-                                <div key={cat.categoryId} className="flex items-center justify-between p-4 rounded-3xl hover:bg-muted/30 transition-colors border border-transparent hover:border-border/40 group">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black uppercase text-xs">
-                                            {cat.name.slice(0, 2)}
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-sm tracking-tight">{cat.name}</p>
-                                            <p className="text-[10px] text-muted-foreground uppercase font-black">{cat.count} Units Sold</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="font-black text-lg tracking-tighter">${cat.revenue.toFixed(2)}</p>
-                                        <div className="w-16 h-1 bg-muted rounded-full overflow-hidden mt-1">
-                                            <div className="h-full bg-primary" style={{ width: `${Math.min(100, (cat.revenue / stats.totalRevenue) * 500)}%` }} />
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
+                <section aria-labelledby="by-category" className="rounded-xl bg-panel p-5 shadow-[inset_0_0_0_1px_rgb(244_234_221/0.06)] lg:col-span-2">
+                    <h2 id="by-category" className="display text-[1.75rem] leading-none">Sales by category</h2>
+                    <p className="mt-2 text-sm text-muted-foreground">Drinks ordered and their value, across all orders.</p>
+                    {categories.length === 0 ? (
+                        <p className="mt-5 rounded-sm border-2 border-dashed border-slat px-4 py-8 text-center text-muted-foreground">No sales yet</p>
+                    ) : (
+                        <table className="mt-4 w-full border-separate border-spacing-y-1.5">
+                            <caption className="sr-only">Drinks ordered and value by category</caption>
+                            <thead>
+                                <tr className="text-left text-sm text-muted-foreground">
+                                    <th scope="col" className="px-3 pb-1 font-normal">Category</th>
+                                    <th scope="col" className="px-3 pb-1 text-right font-normal">Drinks</th>
+                                    <th scope="col" className="px-3 pb-1 text-right font-normal">Value</th>
+                                    <th scope="col" className="hidden w-1/4 px-3 pb-1 font-normal sm:table-cell"><span className="sr-only">Share of value</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {categories.map((cat) => (
+                                    <tr key={cat.categoryId}>
+                                        <td className="h-12 rounded-l-sm bg-slat px-3 font-bold">{cat.name}</td>
+                                        <td className="h-12 bg-slat px-3 text-right tabular-nums">{cat.count.toLocaleString()}</td>
+                                        <td className="h-12 bg-slat px-3 text-right tabular-nums max-sm:rounded-r-sm">{money(cat.revenue)}</td>
+                                        <td className="hidden h-12 rounded-r-sm bg-slat px-3 sm:table-cell">
+                                            <Bar share={categoryRevenue > 0 ? cat.revenue / categoryRevenue : 0} className="bg-foreground/70" />
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </section>
             </div>
         </div>
     );
