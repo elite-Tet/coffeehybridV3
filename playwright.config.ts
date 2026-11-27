@@ -1,4 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
+import { loadEnvConfig } from '@next/env';
+
+// Load .env.local (and friends) the same way Next.js does, so E2E_* test logins can live there.
+loadEnvConfig(process.cwd());
 
 /**
  * Browser tests for the customer journey, keyboard access and WCAG checks.
@@ -7,7 +11,7 @@ import { defineConfig, devices } from '@playwright/test';
  *
  * Runs against a production server on :3000 (NEXTAUTH_URL points there, so auth
  * redirects only work on that port). Uses your installed Chrome — no browser download.
- * Signed-in tests need E2E_CUSTOMER_EMAIL / E2E_ADMIN_EMAIL / E2E_PASSWORD (see .env.example);
+ * Signed-in tests need E2E_CUSTOMER_EMAIL / E2E_ADMIN_EMAIL / E2E_PASSWORD in .env.local or the shell (see .env.example);
  * without them those tests are skipped, the rest still run.
  */
 export default defineConfig({
