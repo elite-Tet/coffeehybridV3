@@ -21,8 +21,8 @@ export default function StatusStepper({ status }: { status: OrderStatus }) {
                 return (
                     <li key={step.key} aria-current={active ? 'step' : undefined} className="space-y-2">
                         <div className={cn('h-2 rounded-sm', done ? 'bg-foreground/70' : active ? (status === 'ready' ? 'bg-signal' : 'bg-brewing') : 'bg-slat')} />
-                        <p className={cn('display flex items-center gap-1 text-[1.125rem] tracking-[0.02em] sm:text-[1.375rem]', active ? (status === 'ready' ? 'text-signal' : 'text-foreground') : done ? 'text-foreground/80' : 'text-muted-foreground')}>
-                            {done && <Check className="size-3.5" aria-hidden="true" />}
+                        <p className={cn('display flex items-center gap-1 whitespace-nowrap text-[1rem] tracking-[0.01em] sm:text-[1.375rem] sm:tracking-[0.02em]', active ? (status === 'ready' ? 'text-signal' : 'text-foreground') : done ? 'text-foreground/80' : 'text-muted-foreground')}>
+                            {done && <Check className="size-3.5 shrink-0" aria-hidden="true" />}
                             {step.label}
                         </p>
                     </li>

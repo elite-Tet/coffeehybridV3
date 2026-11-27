@@ -41,3 +41,10 @@ yarn-error.log*
 next-env.d.ts
 # Playwright CLI output (may contain credentials)
 .playwright-cli/
+
+# keep the template, ignore real env files
+!.env.example
+
+# Playwright test output
+/test-results/
+/playwright-report/
