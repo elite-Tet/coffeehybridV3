@@ -35,7 +35,7 @@ Fill in `.env.local` (every variable is explained in [`.env.example`](../.env.ex
 2. Make yourself an admin: in Atlas, open the `users` collection and set your document's `role` to `"admin"`. Sign out and back in.
 3. Load the sample menu: while signed in as admin, open the browser console on the site and run
    `await fetch('/api/admin/seed', { method: 'POST' }).then(r => r.json())`.
-   It creates or updates 8 drinks and 2 categories from `lib/mock-data.ts`. It overwrites those 8 products by name, so don't run it after hand-editing them.
+   It creates or updates 8 drinks and 2 categories from `server/seed/menu.ts`. It overwrites those 8 products by name, so don't run it after hand-editing them.
 
 ---
 
@@ -66,10 +66,12 @@ server/         server-only code; never import it from a 'use client' file
   db.ts           cached Mongoose connection
   require-role.ts guard for API routes: `const c = await requireRole(['admin']); if (!c.ok) return c.response;`
   models/         User, Product, Category, Order, Strike
-lib/            framework-free helpers usable anywhere: qr, strikes, routes, utils, validations/ (zod), mock-data
+  seed/menu.ts    sample menu loaded by POST /api/admin/seed
+lib/            framework-free helpers usable anywhere: qr, strikes, utils, validations/ (zod)
 types/          shared TypeScript types
-__tests__/      Vitest unit tests
-e2e/            Playwright browser tests (journey, keyboard, accessibility)
+tests/
+  unit/         Vitest unit tests
+  e2e/          Playwright browser tests (journey, keyboard, accessibility)
 docs/           audit, mockups, before/after screenshots, this guide, case study
 proxy.ts        page-level auth and role gate (Next 16's name for middleware)
 ```

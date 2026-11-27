@@ -55,9 +55,10 @@ First run, roles and seeding: see **[docs/ONBOARDING.md](docs/ONBOARDING.md)**.
 app/          routes only: (shop), (auth), staff, admin, api
 features/     one folder per domain: home, menu, cart, orders, auth, staff, admin
 components/   shared UI: ui/ (shadcn) and layout/ (site chrome)
-server/       server-only: auth config, database, models, role guard
+server/       server-only: auth config, database, models, role guard, seed data
 lib/          framework-free helpers and zod schemas
-e2e/          Playwright specs     __tests__/  Vitest specs     docs/  design and process
+tests/        unit/ (Vitest) and e2e/ (Playwright)
+docs/         audit, mockups, screenshots, onboarding, case study
 ```
 
 ## The redesign

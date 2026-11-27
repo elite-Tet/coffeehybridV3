@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import Logo from '@/components/layout/Logo';
-import { ROUTES } from '@/lib/routes';
 
 const linkClass = 'inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground hover:underline';
 
@@ -15,9 +14,9 @@ export default function SiteFooter() {
 
                 <nav aria-label="Order">
                     <ul className="grid">
-                        <li><Link href={ROUTES.MENU} className={linkClass}>Menu</Link></li>
+                        <li><Link href="/menu" className={linkClass}>Menu</Link></li>
                         <li><Link href="/history" className={linkClass}>Your orders</Link></li>
-                        <li><Link href={ROUTES.LOGIN} className={linkClass}>Sign in</Link></li>
+                        <li><Link href="/login" className={linkClass}>Sign in</Link></li>
                     </ul>
                 </nav>
 
