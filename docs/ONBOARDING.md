@@ -52,14 +52,15 @@ app/            Routes only: pages, layouts, API handlers. Keep these files thin
   layout.tsx      fonts, providers, skip link
 components/
   ui/             shadcn primitives (generated; local edits are marked with a comment)
-  layout/         site chrome: SiteHeader, SiteFooter, BottomTabBar, AccountSheet, Logo, board-styles.ts
+  layout/         site chrome: SiteHeader, SiteFooter, BottomTabBar, AccountSheet, Logo, WorkspaceSidebar (staff/admin), board-styles.ts
 features/       one folder per domain: its components and client-side logic
   home/           homepage sections (Hero, PickupBoard, HowItWorks, MenuPreview, PickupPolicy, ClosingCta)
   menu/           ProductCard, ProductModal (customize sheet), CategoryTabs
   cart/           CartDrawer + cart.store.ts (zustand, persisted in localStorage)
   orders/         PickupTicket, CountdownTimer, StatusStepper, StatusChip, StrikeDots, ActiveOrderBar, order-status.ts
   auth/           AuthShell, AuthField, safe-callback.ts
-  staff/ admin/   QRScanner and the two sidebars
+  staff/          QRScanner (camera + typed code) and the staff sidebar
+  admin/          admin sidebar, shared admin styles, orders CSV export
 server/         server-only code; never import it from a 'use client' file
   auth.ts         Auth.js config (credentials + Google, JWT sessions)
   db.ts           cached Mongoose connection
@@ -86,7 +87,7 @@ proxy.ts        page-level auth and role gate (Next 16's name for middleware)
 | `npm run dev` | Dev server on :3000. ⚠️ Its `predev` step kills whatever is already on port 3000. |
 | `npm run lint` | ESLint (zero warnings at the time of writing) |
 | `npm run type-check` | TypeScript, no emit |
-| `npm test` | Vitest unit tests (15) |
+| `npm test` | Vitest unit tests (18) |
 | `npm run build` | Production build |
 | `npm run test:e2e` | Playwright against a production build on :3000 (run `npm run build` first). Needs `E2E_*` test accounts in your shell or `.env.local` for the signed-in tests. Otherwise they're skipped. |
 
@@ -119,11 +120,12 @@ Each step was one reviewable commit with lint, type-check, tests and build passi
 12. Browser tests, after screenshots, these docs
 
 **Suggested next steps, in this order:**
-1. **Scanner restart after a scan.** `QRScanner` clears the camera on success, so *Next Customer* probably can't resume it. Keep the `#reader` element mounted and pause/resume instead. Test on a real phone.
-2. **Admin "+ size option" button** has no handler. Either build size editing or remove the button.
-3. **Staff/admin visual pass.** They use the new colours but still have the old layout and italic headings. Bring them into the board style (they're the screens a café would actually use all day).
-4. **Move the fork out of the old repo's folder.** Next.js warns that it picked the outer folder as the project root because there are two lockfiles. Or set `outputFileTracingRoot` in `next.config.ts`.
-5. **CI:** run lint, type-check, unit tests and build on every push; run `test:e2e` against a preview deployment.
+_Done since the first version of this list: the scanner now pauses and resumes instead of tearing the camera down, size options are editable in the admin product dialog, and the staff/admin screens use the board layout (`docs/after/staff-admin/` has their own before/after)._
+
+1. **Test the scanner on a real phone:** scan → *Next customer* → scan again. Headless tests can't drive a camera.
+2. **Move the fork out of the old repo's folder.** Next.js warns that it picked the outer folder as the project root because there are two lockfiles. Or set `outputFileTracingRoot` in `next.config.ts`.
+3. **CI:** run lint, type-check, unit tests and build on every push; run `test:e2e` against a preview deployment.
+4. **Real photography and a copy review** with an actual café.
 
 ---
 
@@ -136,4 +138,5 @@ Each step was one reviewable commit with lint, type-check, tests and build passi
 - **`.display` uses `var(--font-board)`, not `var(--font-display)`.** Tailwind's `@theme inline` doesn't emit `--font-*` as real CSS variables, so plain CSS has to reference the `next/font` variable directly.
 - **Stale styles in dev?** Stop the dev server, delete `.next/dev`, start again (Turbopack's cache).
 - **Ports.** Auth redirects use `NEXTAUTH_URL`, so on any port other than 3000, signed-out redirects go to :3000 and appear to fail.
+- **Test accounts collect strikes.** Orders placed while testing and never picked up expire and count as missed pickups; after three, that account can't order for 24 hours. The journey e2e test registers a fresh customer each run for this reason.
 - **Seed data overwrites by name** (§1). The menu itself is managed in `/admin/products`.
