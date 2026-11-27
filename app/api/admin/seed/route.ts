@@ -1,11 +1,11 @@
-// Admin-only: upserts the sample menu (categories + products) from lib/mock-data.ts.
+// Admin-only: upserts the sample menu (categories + products) from server/seed/menu.ts.
 // Usage (signed in as admin): fetch('/api/admin/seed', { method: 'POST' })
 
 import { NextResponse } from 'next/server';
 import dbConnect from '@/server/db';
 import Product from '@/server/models/Product';
 import Category from '@/server/models/Category';
-import { mockProducts } from '@/lib/mock-data';
+import { seedProducts } from '@/server/seed/menu';
 import { requireRole } from '@/server/require-role';
 
 // POST, not GET: it writes to the database, so it must not be triggerable by a link or prefetch.
@@ -19,7 +19,7 @@ export const POST = async () => {
         console.log('Starting Force Product Update/Seed...');
 
         // 1. Ensure Categories exist
-        const uniqueCategories = Array.from(new Set(mockProducts.map(p => p.category.name)));
+        const uniqueCategories = Array.from(new Set(seedProducts.map(p => p.category.name)));
         const categoryMap = new Map();
 
         for (const catName of uniqueCategories) {
@@ -37,7 +37,7 @@ export const POST = async () => {
 
         // 2. Upsert Products
         const results = [];
-        for (const p of mockProducts) {
+        for (const p of seedProducts) {
             const categoryId = categoryMap.get(p.category.name);
             
             // Check if product exists by name

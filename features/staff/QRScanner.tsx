@@ -1,13 +1,12 @@
-// FIX: Replaced 'any' with proper type definition for scanResult
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft, CheckCircle, XCircle, RefreshCw, AlertTriangle } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Loader2, CheckCircle2, XCircle, RefreshCw, AlertTriangle } from 'lucide-react';
+import { orderCode } from '@/features/orders/order-status';
+import { boardButtonPrimary } from '@/components/layout/board-styles';
+import { cn } from '@/lib/utils';
 
 interface ScanResult {
     success: boolean;
@@ -22,6 +21,59 @@ export default function QRScanner() {
     const [isVerifying, setIsVerifying] = useState(false);
     const isVerifyingRef = useRef(false); // Ref to track verifying state without re-triggering effect
     const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+    const [manualCode, setManualCode] = useState('');
+
+    /**
+     * Restart the camera for the next scan. The scanner is only ever paused,
+     * never cleared, while this page is open: #reader stays mounted (hidden
+     * behind the result card), so resume() always has a live scanner to wake.
+     */
+    const resumeScanning = useCallback(() => {
+        if (scannerRef.current) {
+            try { scannerRef.current.resume(); } catch { /* not paused, e.g. camera never started */ }
+        }
+        isVerifyingRef.current = false;
+        setIsVerifying(false);
+    }, []);
+
+    /** One verification path for both the camera scan ({ qrCode }) and the typed ticket code ({ orderCode }). */
+    const verify = useCallback(async (payload: { qrCode: string } | { orderCode: string }) => {
+        if (isVerifyingRef.current) return;
+        isVerifyingRef.current = true;
+        setIsVerifying(true);
+
+        // Stop the camera while we check this one
+        if (scannerRef.current) {
+            try { scannerRef.current.pause(); } catch { /* not scanning */ }
+        }
+
+        try {
+            const response = await fetch('/api/staff/verify-qr', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                setScanResult({ success: true, data: data.data });
+                setManualCode('');
+                toast.success('Order verified');
+                // Camera stays paused until staff tap Next customer
+            } else {
+                setScanResult({ success: false, error: data.error, data: data.data });
+                toast.error(data.error || 'Verification failed');
+                // On failure, allow scanning again after a delay
+                setTimeout(() => {
+                    setScanResult(null);
+                    resumeScanning();
+                }, 3000);
+            }
+        } catch {
+            toast.error('Network error during verification');
+            resumeScanning();
+        }
+    }, [resumeScanning]);
 
     useEffect(() => {
         // Prevent double initialization
@@ -44,46 +96,8 @@ export default function QRScanner() {
             /* verbose= */ false
         );
 
-        const onScanSuccess = async (decodedText: string) => {
-            if (isVerifyingRef.current) return;
-            
-            console.log(`Scan verified: ${decodedText}`);
-            isVerifyingRef.current = true;
-            setIsVerifying(true);
-            
-            // Clean up scanner immediately to stop usage
-            if(scannerRef.current) {
-                scannerRef.current.pause();
-            }
-
-            try {
-                const response = await fetch('/api/staff/verify-qr', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ qrCode: decodedText })
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    setScanResult({ success: true, data: data.data });
-                    toast.success('Order Verified!');
-                    // Optionally clear scanner on success
-                    scannerRef.current?.clear();
-                } else {
-                    setScanResult({ success: false, error: data.error, data: data.data });
-                    toast.error(data.error || 'Verification failed');
-                    // On failure, allow scanning again after a delay
-                    setTimeout(() => {
-                        isVerifyingRef.current = false;
-                        setIsVerifying(false);
-                        setScanResult(null); 
-                    }, 3000);
-                }
-            } catch {
-                toast.error('Network error during verification');
-                isVerifyingRef.current = false;
-                setIsVerifying(false);
-            }
+        const onScanSuccess = (decodedText: string) => {
+            verify({ qrCode: decodedText });
         };
 
         const onScanFailure = () => {
@@ -93,7 +107,7 @@ export default function QRScanner() {
         scanner.render(onScanSuccess, onScanFailure);
         scannerRef.current = scanner;
 
-        // Cleanup function
+        // Cleanup on unmount: the only place the scanner is cleared
         return () => {
              if (scannerRef.current) {
                 try {
@@ -104,113 +118,116 @@ export default function QRScanner() {
                 scannerRef.current = null;
             }
         };
-    }, []); // Empty dependency array - run ONLY on mount
+    }, [verify]); // verify is stable, so this still runs once on mount
 
     const resetScan = () => {
         setScanResult(null);
-        if (scannerRef.current) {
-            try {
-                scannerRef.current.resume();
-            } catch {
-                // Ignore if not paused
-            }
-        }
-        isVerifyingRef.current = false;
-        setIsVerifying(false);
+        resumeScanning();
     };
 
+    const resultCode = scanResult?.data?._id ? orderCode(scanResult.data._id.toString()) : null;
+
     return (
-        <div className="w-full max-w-2xl mx-auto space-y-6">
-            <header className="flex items-center gap-4">
-                <Link href="/staff">
-                    <Button variant="outline" size="icon" className="rounded-full h-12 w-12 hover:bg-primary/10">
-                        <ArrowLeft className="w-5 h-5" />
-                    </Button>
-                </Link>
-                <div>
-                    <h1 className="text-3xl font-black tracking-tighter">QR VERIFICATION</h1>
-                    <p className="text-muted-foreground text-sm font-medium">Verify pickup tokens instantly.</p>
-                </div>
+        <div className="w-full space-y-6">
+            <header>
+                <h1 className="display text-section">Scan pickups</h1>
+                <p className="mt-2 text-muted-foreground">Scan the QR code on the customer’s ticket, or type its code below.</p>
             </header>
 
-            <AnimatePresence mode="wait">
-                {scanResult ? (
-                    <motion.div
-                        key="result"
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 1.1 }}
-                        className="p-8 rounded-[2rem] bg-card/60 backdrop-blur-xl border border-border/40 shadow-2xl flex flex-col items-center text-center gap-8"
-                    >
-                        {scanResult.success ? (
-                            <>
-                                <div className="p-6 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/10">
-                                    <CheckCircle className="w-16 h-16" />
-                                </div>
-                                <div className="space-y-2">
-                                    <h2 className="text-4xl font-black tracking-tighter text-emerald-500 uppercase">Verified</h2>
-                                    <p className="font-mono text-xs opacity-60">ORDER #{scanResult.data?._id.toString().slice(-8).toUpperCase()}</p>
-                                </div>
-                                <div className="w-full p-6 rounded-3xl bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-between font-bold">
-                                    <span>Customer Ready</span>
-                                    <span className="text-emerald-500">Pick up now</span>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <div className="p-6 rounded-full bg-destructive/10 text-destructive border border-destructive/10">
-                                    <XCircle className="w-16 h-16" />
-                                </div>
-                                <div className="space-y-2">
-                                    <h2 className="text-4xl font-black tracking-tighter text-destructive uppercase">Error</h2>
-                                    <p className="font-bold text-lg opacity-80">{scanResult.error}</p>
-                                    {scanResult.data?._id && (
-                                        <p className="font-mono text-xs opacity-60">ORDER #{scanResult.data._id.toString().slice(-8).toUpperCase()}</p>
-                                    )}
-                                </div>
-                                <div className="w-full p-4 rounded-3xl bg-destructive/5 text-destructive font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
-                                    <AlertTriangle className="w-4 h-4" />
-                                    Strike Applied Automatically
-                                </div>
-                            </>
+            {scanResult && (
+                <section
+                    aria-labelledby="scan-result-title"
+                    className="rounded-xl bg-panel p-6 shadow-[inset_0_0_0_1px_rgb(244_234_221/0.06)] sm:p-8"
+                >
+                    <div role="status" className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="min-w-0">
+                            <h2
+                                id="scan-result-title"
+                                className={cn('display flex items-center gap-2.5 text-[2.5rem] leading-none', scanResult.success ? 'text-signal' : 'text-destructive')}
+                            >
+                                {scanResult.success
+                                    ? <CheckCircle2 className="size-8 shrink-0" aria-hidden="true" />
+                                    : <XCircle className="size-8 shrink-0" aria-hidden="true" />}
+                                {scanResult.success ? 'Verified' : 'Not verified'}
+                            </h2>
+                            <p className="mt-3 text-lg">
+                                {scanResult.success ? 'Hand the order over. It’s marked as picked up.' : scanResult.error}
+                            </p>
+                        </div>
+                        {resultCode && (
+                            <p className="ticket-number text-[clamp(3rem,12vw,4.5rem)]">
+                                <span className="sr-only">Order </span>{resultCode}
+                            </p>
                         )}
+                    </div>
 
-                        <Button
-                            onClick={resetScan}
-                            className={`w-full h-16 text-xl font-black gap-2 transition-all duration-500 ${scanResult.success ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-primary'}`}
+                    {/* Only an expired order comes back with its data; that's the case where the API adds a strike. */}
+                    {!scanResult.success && scanResult.data?._id && (
+                        <p className="mt-5 flex items-start gap-2 rounded-sm bg-st-expired/12 px-4 py-3 text-sm">
+                            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden="true" />
+                            The pickup window closed, so the customer’s record gets a missed-pickup strike.
+                        </p>
+                    )}
+
+                    <button type="button" onClick={resetScan} className={cn(boardButtonPrimary, 'mt-6 w-full')}>
+                        <RefreshCw className="size-5" aria-hidden="true" />
+                        Next customer
+                    </button>
+                </section>
+            )}
+
+            {/* Kept mounted the whole time so html5-qrcode keeps its #reader element; hidden while a result shows */}
+            <figure hidden={!!scanResult}>
+                    <div className="relative overflow-hidden rounded-xl bg-black">
+                        <div id="reader" className="w-full overflow-hidden [&>div]:!border-none [&>div]:!shadow-none" />
+
+                        {isVerifying && (
+                            <div className="absolute inset-0 z-50 flex items-center justify-center gap-3 bg-roast/85" role="status">
+                                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                                <span className="font-bold">Checking the code…</span>
+                            </div>
+                        )}
+                    </div>
+                    <figcaption className="mt-2 text-sm text-muted-foreground">Hold the ticket’s QR code inside the camera frame.</figcaption>
+            </figure>
+
+            {!scanResult && (
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        if (manualCode.trim()) verify({ orderCode: manualCode.trim() });
+                    }}
+                    className="rounded-xl bg-panel p-5"
+                    aria-labelledby="manual-code-title"
+                >
+                    <h2 id="manual-code-title" className="display text-[1.5rem]">Camera not working?</h2>
+                    <p id="manual-code-hint" className="mt-1 text-sm text-muted-foreground">
+                        Type the 4-character code on the customer’s ticket, for example 49CC.
+                    </p>
+                    <div className="mt-3 flex gap-2">
+                        <label htmlFor="manual-code" className="sr-only">Order code</label>
+                        <input
+                            id="manual-code"
+                            value={manualCode}
+                            onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+                            maxLength={4}
+                            autoComplete="off"
+                            autoCapitalize="characters"
+                            spellCheck={false}
+                            aria-describedby="manual-code-hint"
+                            placeholder="49CC"
+                            className="display h-12 w-full min-w-0 rounded-sm border border-input bg-roast px-3 text-[1.75rem] tracking-[0.2em] text-foreground placeholder:text-muted-foreground/50 focus-visible:border-signal"
+                        />
+                        <button
+                            type="submit"
+                            disabled={isVerifying || manualCode.trim().length !== 4}
+                            className="display min-h-12 shrink-0 rounded-sm bg-signal px-5 text-[1.25rem] text-roast transition-colors hover:bg-signal/85 disabled:opacity-50"
                         >
-                            <RefreshCw className="w-6 h-6" />
-                            Next Customer
-                        </Button>
-                    </motion.div>
-                ) : (
-                    <motion.div
-                        key="scanner"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="relative overflow-hidden rounded-[2rem] border border-border/40 bg-black backdrop-blur-md shadow-2xl"
-                    >
-                        <div id="reader" className="w-full overflow-hidden [&>div]:!shadow-none [&>div]:!border-none" />
-
-                        {/* Scanner Laser (Pure visual effect) */}
-                        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.8)] z-10 pointer-events-none opacity-50" />
-
-                        {isVerifying ? (
-                            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-50">
-                                <Loader2 className="w-12 h-12 animate-spin text-primary" />
-                                <p className="font-black text-sm uppercase tracking-widest text-primary animate-pulse">Verifying...</p>
-                            </div>
-                        ) : (
-                            <div className="absolute inset-x-0 bottom-0 p-8 bg-gradient-to-t from-black to-transparent pointer-events-none z-20">
-                                <div className="flex items-center justify-center gap-3 text-white/70 animate-pulse">
-                                    <span className="w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_theme(colors.primary.DEFAULT)]" />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Scanning Active...</span>
-                                </div>
-                            </div>
-                        )}
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                            Check code
+                        </button>
+                    </div>
+                </form>
+            )}
         </div>
     );
 }

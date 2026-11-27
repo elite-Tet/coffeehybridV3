@@ -56,7 +56,8 @@ export default function ActiveOrderBar() {
     const mins = minutesLeft(order.expiresAt);
 
     return (
-        <div
+        <aside
+            aria-label="Current order"
             className="fixed inset-x-3 z-30 bottom-[calc(var(--bottom-bar-h)+env(safe-area-inset-bottom,0px)+0.5rem)] md:inset-x-auto md:right-6 md:bottom-6 md:w-96"
         >
             <Link
@@ -82,6 +83,6 @@ export default function ActiveOrderBar() {
                     Show code
                 </span>
             </Link>
-        </div>
+        </aside>
     );
 }

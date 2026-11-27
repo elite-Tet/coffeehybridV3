@@ -68,11 +68,12 @@ function SheetContent({
         {...props}
       >
         {children}
+        {/* Local edit: larger close target (44px touch / 32px mouse). */}
         {showCloseButton && (
           <SheetPrimitive.Close data-slot="sheet-close" asChild>
             <Button
               variant="ghost"
-              className="absolute top-3 right-3"
+              className="absolute top-3 right-3 size-11 pointer-fine:size-8"
               size="icon-sm"
             >
               <XIcon

@@ -1,13 +1,14 @@
 import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
-    plugins: [react()],
     test: {
-        environment: 'jsdom',
+        // Unit tests are pure logic and Mongoose model validation, so they run in Node (no DOM).
+        // Add jsdom + @testing-library back when you start writing component tests.
+        environment: 'node',
         globals: true,
-        setupFiles: ['./__tests__/setup.ts'],
+        // Browser tests in tests/e2e/ run with Playwright (npm run test:e2e).
+        include: ['tests/unit/**/*.test.{ts,tsx}'],
     },
     resolve: {
         alias: {

@@ -17,7 +17,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
     return (
         <div className="flex min-h-dvh flex-col">
             <SiteHeader />
-            <main className="flex-1 pb-[calc(var(--bottom-bar-h)+4.5rem)] md:pb-0">{children}</main>
+            <main id="main" tabIndex={-1} className="flex-1 pb-[calc(var(--bottom-bar-h)+4.5rem)] outline-none md:pb-0">{children}</main>
             {!isAuth && <SiteFooter />}
             <ActiveOrderBar />
             <BottomTabBar />

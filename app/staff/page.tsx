@@ -1,18 +1,88 @@
-// FIX: Removed unused imports
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { IOrder } from '@/types';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, RefreshCw, CheckCircle, Clock, ChevronRight, ShoppingBag } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { formatDistanceToNowStrict } from 'date-fns';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { IOrder, OrderStatus } from '@/types';
+import { ORDER_STATUS, describeCustomizations, orderCode } from '@/features/orders/order-status';
+import { cn } from '@/lib/utils';
+
+const REFRESH_MS = 15000;
+
+type Lane = {
+    status: Extract<OrderStatus, 'pending' | 'confirmed' | 'ready'>;
+    /** Lamp colour on the board, matching the homepage pickup board. */
+    lamp: string;
+    next?: { status: OrderStatus; label: string; primary: boolean };
+    empty: string;
+};
+
+const LANES: Lane[] = [
+    { status: 'pending', lamp: 'text-st-received', next: { status: 'confirmed', label: 'Start brewing', primary: false }, empty: 'No new orders' },
+    { status: 'confirmed', lamp: 'text-brewing', next: { status: 'ready', label: 'Mark ready', primary: true }, empty: 'Nothing brewing' },
+    { status: 'ready', lamp: 'text-signal', empty: 'Nothing waiting for pickup' },
+];
+
+function itemName(item: IOrder['items'][number]) {
+    return typeof item.product === 'object' && item.product && 'name' in item.product ? item.product.name : 'Item';
+}
+
+function OrderSlat({ order, lane, onAdvance }: { order: IOrder; lane: Lane; onAdvance: (id: string, status: OrderStatus) => void }) {
+    const code = orderCode(order._id.toString());
+    const placed = new Date(order.createdAt);
+
+    return (
+        <li className="rounded-sm bg-slat p-4">
+            <div className="flex items-baseline justify-between gap-3">
+                <p className="ticket-number text-[2.5rem]"><span className="sr-only">Order </span>{code}</p>
+                <p className="text-sm text-muted-foreground">
+                    <time dateTime={placed.toISOString()} title={placed.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}>
+                        {formatDistanceToNowStrict(placed, { addSuffix: true })}
+                    </time>
+                </p>
+            </div>
+
+            <ul className="mt-3 space-y-1.5">
+                {order.items.map((item, idx) => {
+                    const details = describeCustomizations(item.customizations);
+                    return (
+                        <li key={idx} className="leading-snug">
+                            <span className="font-bold tabular-nums">{item.quantity} ×</span> {itemName(item)}
+                            {details && <span className="block text-sm text-muted-foreground">{details}</span>}
+                        </li>
+                    );
+                })}
+            </ul>
+
+            {lane.next ? (
+                <button
+                    type="button"
+                    onClick={() => onAdvance(order._id.toString(), lane.next!.status)}
+                    aria-label={`${lane.next.label}: order ${code}`}
+                    className={cn(
+                        'display mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-sm px-4 text-[1.25rem] tracking-[0.02em] transition-colors',
+                        lane.next.primary
+                            ? 'bg-signal text-roast hover:bg-[#ffc457]'
+                            : 'text-foreground shadow-[inset_0_0_0_2px_var(--foam)] hover:bg-foreground/10'
+                    )}
+                >
+                    {lane.next.label}
+                </button>
+            ) : (
+                <p className="mt-4 text-sm text-muted-foreground">
+                    Waiting for the customer. Held until{' '}
+                    <strong className="text-foreground">{new Date(order.expiresAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</strong>.
+                </p>
+            )}
+        </li>
+    );
+}
 
 export default function OrderQueue() {
     const [orders, setOrders] = useState<IOrder[]>([]);
     const [loading, setLoading] = useState(true);
+    const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
 
     const fetchOrders = useCallback(async (silent = false) => {
         if (!silent) setLoading(true);
@@ -21,9 +91,10 @@ export default function OrderQueue() {
             const data = await res.json();
             if (data.success) {
                 setOrders(data.data);
+                setUpdatedAt(new Date());
             }
         } catch (error) {
-            console.error("Fetch orders failed", error);
+            console.error('Fetch orders failed', error);
         } finally {
             if (!silent) setLoading(false);
         }
@@ -31,11 +102,11 @@ export default function OrderQueue() {
 
     useEffect(() => {
         fetchOrders();
-        const interval = setInterval(() => fetchOrders(true), 15000);
+        const interval = setInterval(() => fetchOrders(true), REFRESH_MS);
         return () => clearInterval(interval);
     }, [fetchOrders]);
 
-    const updateStatus = async (id: string, newStatus: string) => {
+    const updateStatus = async (id: string, newStatus: OrderStatus) => {
         try {
             const res = await fetch(`/api/orders/${id}`, {
                 method: 'PATCH',
@@ -44,9 +115,8 @@ export default function OrderQueue() {
             });
             const data = await res.json();
             if (data.success) {
-                // FIX: Replaced 'any' with proper OrderStatus type from types
-                setOrders(prev => prev.map(o => o._id === id ? { ...o, status: newStatus as IOrder['status'] } : o));
-                toast.success(`Order #${id.slice(-4)} updated to ${newStatus}`);
+                setOrders(prev => prev.map(o => o._id === id ? { ...o, status: newStatus } : o));
+                toast.success(`Order ${orderCode(id)} is now ${ORDER_STATUS[newStatus].label}`);
             } else {
                 toast.error(data.error || 'Failed to update order');
             }
@@ -57,149 +127,69 @@ export default function OrderQueue() {
 
     if (loading && orders.length === 0) {
         return (
-            <div className="flex h-[70vh] flex-col items-center justify-center gap-4">
-                <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                <p className="text-muted-foreground animate-pulse font-medium uppercase tracking-[0.2em] text-xs">Synchronizing Queue...</p>
+            <div className="flex h-[60vh] items-center justify-center" role="status">
+                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
+                <span className="sr-only">Loading the order board</span>
             </div>
         );
     }
 
-    const pendingOrders = orders.filter(o => o.status === 'pending');
-    const confirmedOrders = orders.filter(o => o.status === 'confirmed');
-    const readyOrders = orders.filter(o => o.status === 'ready');
-
-    // FIX: Replaced 'any' with proper type definition
-    interface ColumnProps {
-        title: string;
-        icon: React.ComponentType<{ className?: string }>;
-        color: string;
-        list: IOrder[];
-        nextStatus?: string;
-        nextLabel?: string;
-    }
-
-    const Column = ({ title, icon: Icon, color, list, nextStatus, nextLabel }: ColumnProps) => (
-        <div className="flex flex-col gap-6">
-            <div className={`p-4 rounded-3xl border flex items-center justify-between shadow-sm ${color}`}>
-                <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-background/50 backdrop-blur-sm">
-                        <Icon className="w-5 h-5" />
-                    </div>
-                    <span className="font-black uppercase tracking-widest text-[10px]">{title}</span>
-                </div>
-                <Badge variant="outline" className="bg-background/20 font-black border-none">{list.length}</Badge>
-            </div>
-
-            <div className="space-y-4">
-                <AnimatePresence mode="popLayout">
-                    {list.map((order: IOrder) => (
-                        <motion.div
-                            key={order._id.toString()}
-                            layout
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                        >
-                            <Card className="bg-card/40 backdrop-blur-md border-border/40 hover:border-primary/40 transition-all duration-300 group shadow-lg">
-                                <CardHeader className="pb-3 border-b border-border/10">
-                                    <div className="flex justify-between items-start">
-                                        <div className="space-y-1">
-                                            <CardTitle className="text-xs font-black text-muted-foreground uppercase flex items-center gap-2">
-                                                <ShoppingBag className="w-3 h-3 text-primary" />
-                                                Order #{order._id.toString().slice(-6).toUpperCase()}
-                                            </CardTitle>
-                                            <CardDescription className="text-[10px] font-bold">
-                                                Placed: {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </CardDescription>
-                                        </div>
-                                        <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black uppercase py-0.5 px-2">
-                                            {order.items.reduce((a, b) => a + b.quantity, 0)} Items
-                                        </Badge>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="py-4 space-y-3">
-                                    {/* FIX: Added proper type guard to check if product is IProduct */}
-                                    {order.items.map((item, idx: number) => {
-                                        const product = typeof item.product === 'object' && item.product && 'name' in item.product ? item.product : null;
-                                        return (
-                                            <div key={idx} className="flex justify-between items-start text-xs bg-muted/20 p-2.5 rounded-xl border border-border/20 group-hover:bg-muted/30 transition-colors">
-                                                <div className="font-bold flex gap-2 items-center">
-                                                    <span className="text-primary">{item.quantity}x</span>
-                                                    <span className="text-foreground/90">{product?.name || 'Item'}</span>
-                                                </div>
-                                                <div className="text-[9px] uppercase tracking-tighter text-muted-foreground hidden sm:block">
-                                                    {item.customizations.size} {item.customizations.sugarLevel} {item.customizations.iceOption}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </CardContent>
-                                <CardFooter className="pt-2">
-                                    {nextStatus && (
-                                        <Button
-                                            size="sm"
-                                            className="w-full font-bold uppercase tracking-widest text-[10px] h-10 gap-2 shadow-inner"
-                                            onClick={() => updateStatus(order._id.toString(), nextStatus)}
-                                        >
-                                            {nextLabel}
-                                            <ChevronRight className="w-3 h-3" />
-                                        </Button>
-                                    )}
-                                    {order.status === 'ready' && (
-                                        <div className="w-full flex flex-col items-center gap-1">
-                                            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center w-full gap-2 border border-emerald-500/10">
-                                                <Clock className="w-4 h-4 animate-pulse" />
-                                                <span className="text-[10px] font-black uppercase">Awaiting Scan</span>
-                                            </div>
-                                        </div>
-                                    )}
-                                </CardFooter>
-                            </Card>
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
-            </div>
-        </div>
-    );
+    const lanes = LANES.map((lane) => ({ lane, list: orders.filter((o) => o.status === lane.status) }));
+    const summary = lanes.map(({ lane, list }) => `${list.length} ${ORDER_STATUS[lane.status].label.toLowerCase()}`).join(', ');
 
     return (
-        <div className="max-w-[1600px] mx-auto space-y-12">
-            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+        <div className="mx-auto max-w-[1600px]">
+            <header className="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                    <h1 className="text-4xl font-black tracking-tighter">ORDER <span className="text-primary italic">QUEUE</span></h1>
-                    <p className="text-muted-foreground font-medium text-sm">Managing the workflow for today&apos;s brews.</p>
+                    <h1 className="display text-section">Order board</h1>
+                    <p className="mt-2 text-muted-foreground">
+                        Live. Refreshes every 15 seconds
+                        {updatedAt && <>, last at {updatedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })}</>}.
+                    </p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" size="sm" onClick={() => fetchOrders()} className="h-10 rounded-2xl gap-2 font-bold px-4 hover:bg-primary/10">
-                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </Button>
-                </div>
+                <button
+                    type="button"
+                    onClick={() => fetchOrders()}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-sm border border-foreground/20 px-4 font-bold text-muted-foreground transition-colors hover:text-foreground"
+                >
+                    <RefreshCw className={cn('size-4', loading && 'animate-spin')} aria-hidden="true" />
+                    Refresh
+                </button>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
-                <Column
-                    title="Inbound Requests"
-                    icon={RefreshCw}
-                    color="bg-muted/40 border-muted-foreground/10 text-muted-foreground/80"
-                    list={pendingOrders}
-                    nextStatus="confirmed"
-                    nextLabel="Acknowledge Order"
-                />
-                <Column
-                    title="Active Brewing"
-                    icon={Clock}
-                    color="bg-amber-500/10 border-amber-500/20 text-amber-500"
-                    list={confirmedOrders}
-                    nextStatus="ready"
-                    nextLabel="Mark as Ready"
-                />
-                <Column
-                    title="Ready for Pickup"
-                    icon={CheckCircle}
-                    color="bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
-                    list={readyOrders}
-                />
+            <p className="sr-only" aria-live="polite">{summary}</p>
+
+            <div className="mt-8 grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {lanes.map(({ lane, list }) => {
+                    const meta = ORDER_STATUS[lane.status];
+                    const headingId = `lane-${lane.status}`;
+                    return (
+                        <section key={lane.status} aria-labelledby={headingId} className="rounded-xl bg-panel p-4 shadow-[inset_0_0_0_1px_rgb(244_234_221/0.06)]">
+                            <div className="flex items-center justify-between gap-3 px-1 pb-3">
+                                <h2 id={headingId} className="display flex items-center gap-2.5 text-[1.75rem] leading-none">
+                                    <span
+                                        aria-hidden="true"
+                                        className={cn('size-2.5 shrink-0 rounded-full bg-current shadow-[0_0_10px_currentColor]', lane.lamp)}
+                                    />
+                                    {meta.label}
+                                </h2>
+                                <span className="display min-w-10 rounded-sm bg-slat px-2.5 py-1 text-center text-[1.375rem] tabular-nums">
+                                    {list.length}<span className="sr-only"> {list.length === 1 ? 'order' : 'orders'}</span>
+                                </span>
+                            </div>
+
+                            {list.length === 0 ? (
+                                <p className="rounded-sm border-2 border-dashed border-slat px-4 py-8 text-center text-muted-foreground">{lane.empty}</p>
+                            ) : (
+                                <ul className="space-y-2">
+                                    {list.map((order) => (
+                                        <OrderSlat key={order._id.toString()} order={order} lane={lane} onAdvance={updateStatus} />
+                                    ))}
+                                </ul>
+                            )}
+                        </section>
+                    );
+                })}
             </div>
         </div>
     );

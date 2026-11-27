@@ -10,6 +10,9 @@ import { Toaster } from "@/components/ui/sonner";
 const body = Atkinson_Hyperlegible_Next({
   variable: "--font-body",
   subsets: ["latin"],
+  // next/font has no metric overrides for these newer families, so name the fallbacks explicitly.
+  adjustFontFallback: false,
+  fallback: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
 });
 
 // Display: condensed board face; opsz axis lets .display pin it to its display cut.
@@ -17,6 +20,8 @@ const board = Big_Shoulders({
   variable: "--font-board",
   subsets: ["latin"],
   axes: ["opsz"],
+  adjustFontFallback: false,
+  fallback: ["Impact", "Haettenschweiler", "Arial Narrow", "sans-serif"],
 });
 
 const geistMono = Geist_Mono({
@@ -47,6 +52,12 @@ export default function RootLayout({
       <body
         className={`${body.variable} ${board.variable} ${geistMono.variable} antialiased`}
       >
+        <a
+          href="#main"
+          className="sr-only rounded-sm bg-signal font-bold text-roast focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:inline-flex focus:min-h-11 focus:items-center focus:px-4 focus:py-3"
+        >
+          Skip to content
+        </a>
         <ThemeProvider>
           <NextAuthProvider>
             <SiteChrome>{children}</SiteChrome>

@@ -34,8 +34,8 @@ export default function PickupTicket({ code, qrValue, status, name, holdUntil, c
             <div className="my-5 border-t-2 border-dashed border-slat" aria-hidden="true" />
 
             <div className="flex flex-wrap items-center gap-5">
-                <div className={cn('relative shrink-0 rounded-lg bg-white p-3', (dead || used) && 'opacity-40')}>
-                    <QRCodeSVG value={qrValue} size={132} level="M" bgColor="#ffffff" fgColor="#000000" title={`QR code for order ${code}`} />
+                <div className="relative shrink-0 rounded-lg bg-white p-3">
+                    <QRCodeSVG className={cn((dead || used) && 'opacity-30')} value={qrValue} size={132} level="M" bgColor="#ffffff" fgColor="#000000" title={`QR code for order ${code}`} />
                     {(dead || used) && (
                         <span className="absolute inset-0 flex items-center justify-center">
                             <span className="rounded-sm bg-roast px-3 py-1 text-sm font-bold text-foreground">

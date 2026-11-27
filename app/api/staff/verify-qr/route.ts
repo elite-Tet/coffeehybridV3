@@ -17,15 +17,37 @@ export const POST = async (req: Request) => {
         }
 
         await dbConnect();
-        const { qrCode } = await req.json();
+        const body = await req.json().catch(() => ({}));
+        const qrCode = typeof body.qrCode === 'string' ? body.qrCode : '';
+        const orderCode = typeof body.orderCode === 'string' ? body.orderCode.trim() : '';
 
-        if (!qrCode) {
-            return NextResponse.json({ success: false, error: 'QR Code is required' }, { status: 400 });
-        }
-
-        const order = await Order.findOne({ qrCode }).populate('user');
-        if (!order) {
-            return NextResponse.json({ success: false, error: 'Invalid QR Code' }, { status: 404 });
+        let order;
+        if (qrCode) {
+            order = await Order.findOne({ qrCode }).populate('user');
+            if (!order) {
+                return NextResponse.json({ success: false, error: 'Invalid QR Code' }, { status: 404 });
+            }
+        } else if (orderCode) {
+            // Fallback when the camera can't scan: the 4-character code printed on the customer's
+            // ticket (last 4 hex chars of the order id). Only active orders are searched.
+            if (!/^[0-9a-f]{4}$/i.test(orderCode)) {
+                return NextResponse.json({ success: false, error: 'Order codes are 4 letters or numbers, like 49CC' }, { status: 400 });
+            }
+            const matches = await Order.find({
+                status: { $in: ['pending', 'confirmed', 'ready'] },
+                $expr: { $regexMatch: { input: { $toString: '$_id' }, regex: `${orderCode}$`, options: 'i' } },
+            })
+                .limit(2)
+                .populate('user');
+            if (matches.length === 0) {
+                return NextResponse.json({ success: false, error: `No active order with code ${orderCode.toUpperCase()}` }, { status: 404 });
+            }
+            if (matches.length > 1) {
+                return NextResponse.json({ success: false, error: 'Two active orders share that code. Scan the QR code instead.' }, { status: 409 });
+            }
+            order = matches[0];
+        } else {
+            return NextResponse.json({ success: false, error: 'Scan a QR code or type the order code' }, { status: 400 });
         }
 
         if (order.status === 'completed') {
